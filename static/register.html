@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký tài khoản - StudentHub</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- CSS Tùy chỉnh -->
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="card register-card p-4 bg-white">
+    <h3 class="text-center text-primary mb-3">Đăng Ký Tài Khoản</h3>
+    <p class="text-center text-muted mb-4">Tạo tài khoản để bắt đầu quản lý học tập</p>
+
+    <!-- Khung thông báo thành công hoặc lỗi -->
+    <div id="alertMessage" class="alert d-none" role="alert"></div>
+
+    <form id="registerForm" novalidate>
+        <!-- Họ và tên -->
+        <div class="mb-3">
+            <label for="fullName" class="form-label fw-bold">Họ và tên</label>
+            <input type="text" class="form-control" id="fullName" placeholder="Nguyễn Văn A" required>
+            <div id="fullNameError" class="invalid-feedback">Vui lòng nhập họ và tên.</div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+            <label for="email" class="form-label fw-bold">Địa chỉ Email</label>
+            <input type="email" class="form-control" id="email" placeholder="example@gmail.com" required>
+            <div id="emailError" class="invalid-feedback">Email không hợp lệ hoặc đã tồn tại.</div>
+        </div>
+
+        <!-- Mật khẩu -->
+        <div class="mb-3">
+            <label for="password" class="form-label fw-bold">Mật khẩu</label>
+            <input type="password" class="form-control" id="password" placeholder="Tối thiểu 6 ký tự" required minlength="6">
+            <div id="passwordError" class="invalid-feedback">Mật khẩu phải từ 6 ký tự trở lên.</div>
+        </div>
+
+        <!-- Nút Đăng ký -->
+        <button type="submit" id="btnSubmit" class="btn btn-primary w-100 py-2 mt-2">
+            Đăng Ký
+        </button>
+    </form>
+
+    <div class="text-center mt-3">
+        <small class="text-muted">Đã có tài khoản? <a href="/static/login.html" class="text-decoration-none">Đăng nhập</a></small>
+    </div>
+</div>
+
+<!-- JavaScript xử lý kết nối API -->
+<script src="/static/js/register.js"></script>
+</body>
+</html>
