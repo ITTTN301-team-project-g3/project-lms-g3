@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
+from app.core.security import verify_password, create_access_token
 
 from app.db.database import get_db
 from app.models.user import User  # Nếu file model tên user.py
@@ -38,3 +40,28 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
+
+@router.post("/login", summary="Đăng nhập hệ thống (Lấy Token)")
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
+):
+    # Tìm user qua email (OAuth2 mặc định gửi email vào biến username)
+    user = db.query(User).filter(User.email == form_data.username).first()
+    
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email hoặc mật khẩu không chính xác",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    # Tạo Access Token (Ép ID về kiểu chuỗi "sub" để khớp với file dependencies.py của cậu)
+    access_token = create_access_token(
+        data={"sub": str(user.id)}
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
