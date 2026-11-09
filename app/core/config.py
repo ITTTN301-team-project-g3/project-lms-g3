@@ -2,6 +2,18 @@ from typing import Union, List
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+<<<<<<< HEAD
+
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173"
+    ]
+=======
 class Settings(BaseSettings):
     database_url: str
     secret_key: str
@@ -17,11 +29,13 @@ class Settings(BaseSettings):
         elif isinstance(v, (list, str)):
             return v
         raise ValueError(v)
+>>>>>>> 6951978a374fec1ce156c4a65ed3153f37b34284
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore"
     )
+
 
 settings = Settings()
