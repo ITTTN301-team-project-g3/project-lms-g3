@@ -1,14 +1,21 @@
-from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
-from typing import Optional
 
-# Schema dữ liệu gửi lên khi Đăng ký (Request Body)
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+
 class UserCreate(BaseModel):
-    full_name: str = Field(..., min_length=2, max_length=100, description="Họ và tên người dùng")
-    email: EmailStr = Field(..., description="Email phải đúng định dạng chuẩn")
-    password: str = Field(..., min_length=6, max_length=50, description="Mật khẩu tối thiểu 6 ký tự")
+    full_name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=6, max_length=50)
 
-# Schema dữ liệu trả về cho Client (Response)
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("Mật khẩu không được vượt quá 72 bytes")
+        return value
+
+
 class UserResponse(BaseModel):
     id: int
     full_name: str
@@ -17,5 +24,4 @@ class UserResponse(BaseModel):
     role: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True  # Cho phép Pydantic đọc dữ liệu từ SQLAlchemy Model
+    model_config = ConfigDict(from_attributes=True)
