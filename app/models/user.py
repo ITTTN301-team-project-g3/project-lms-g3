@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.database import Base
 
@@ -12,3 +13,6 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     role = Column(String(50), default="USER")  # "ADMIN" hoặc "USER"
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Thêm dòng quan hệ để liên kết ngược lại với bảng Subject
+    subjects = relationship("Subject", back_populates="creator", cascade="all, delete-orphan")
