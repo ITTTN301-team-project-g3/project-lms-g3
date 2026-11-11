@@ -21,10 +21,11 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     # 2. Băm mật khẩu
     hashed_pwd = get_password_hash(user_data.password)
     
-    # 3. Tạo record mới
+    # 3. Tạo record mới (Sửa lại đúng tên cột password_hash và thêm full_name)
     new_user = User(
+        full_name=user_data.full_name,
         email=user_data.email,
-        hashed_password=hashed_pwd
+        password_hash=hashed_pwd
     )
     
     db.add(new_user)
@@ -37,13 +38,15 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
 def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # 1. Tìm user theo email (username trong form)
     user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    
+    # Sửa lại thành user.password_hash
+    if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email hoặc mật khẩu không chính xác",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # 2. Tạo JWT access token
-    access_token = create_access_token(data={"sub": user.email})
+    # 2. Tạo JWT access token (Dùng ID hoặc email tùy cấu hình dependencies.py của bạn)
+    access_token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
