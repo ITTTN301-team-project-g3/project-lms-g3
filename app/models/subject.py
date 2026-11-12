@@ -7,11 +7,12 @@ class Subject(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, index=True)
-    code = Column(String(50), unique=True, nullable=False, index=True)
+    
+    code = Column(String(50), nullable=False, index=True)
     description = Column(Text, nullable=True)
     
-    # Khóa ngoại liên kết với bảng users
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
-    # Quan hệ ngược lại với Model User (nếu cần truy xuất user.subjects)
     creator = relationship("User", back_populates="subjects")
+    
+    tasks = relationship("Task", back_populates="subject", cascade="all, delete-orphan")

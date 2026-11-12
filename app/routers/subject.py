@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 # Import phiên làm việc DB và các Model/Schema cần thiết
 from app.db.database import get_db
 from app.models.subject import Subject
-from app.schemas.subject import SubjectCreate, SubjectResponse
+from app.schemas.subject import SubjectCreate, SubjectResponse, SubjectUpdate
 
 # Import dependency xác thực Token người dùng
 from app.core.dependencies import get_current_user
@@ -61,3 +61,63 @@ def get_subjects(db: Session = Depends(get_db),current_user: User = Depends(get_
     subjects = db.query(Subject).filter(Subject.user_id == current_user.id).all()
     
     return subjects
+
+# 3. API Sửa môn học
+# Đường dẫn: PUT /subjects/{subject_id}
+@router.put("/{subject_id}", response_model=SubjectResponse, summary="Sửa thông tin môn học")
+def update_subject(
+    subject_id: int, 
+    subject_in: SubjectUpdate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Tìm môn học theo ID và đảm bảo môn đó của user đang đăng nhập
+    subject = db.query(Subject).filter(
+        Subject.id == subject_id, 
+        Subject.user_id == current_user.id
+    ).first()
+    
+    if not subject:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy môn học hoặc bạn không có quyền sửa!")
+    
+    # Nếu user muốn đổi mã môn học (code), kiểm tra xem mã mới có trùng với mã nào khác của user này không
+    if subject_in.code and subject_in.code != subject.code:
+        existing_code = db.query(Subject).filter(
+            Subject.code == subject_in.code, 
+            Subject.user_id == current_user.id
+        ).first()
+        if existing_code:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mã môn học mới đã tồn tại trong tài khoản của bạn!")
+
+    # Cập nhật các trường có gửi lên
+    if subject_in.name is not None:
+        subject.name = subject_in.name
+    if subject_in.code is not None:
+        subject.code = subject_in.code
+    if subject_in.description is not None:
+        subject.description = subject_in.description
+
+    db.commit()
+    db.refresh(subject)
+    return subject
+
+
+# 4. API Xóa môn học
+# Đường dẫn: DELETE /subjects/{subject_id}
+@router.delete("/{subject_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Xóa môn học")
+def delete_subject(
+    subject_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    subject = db.query(Subject).filter(
+        Subject.id == subject_id, 
+        Subject.user_id == current_user.id
+    ).first()
+    
+    if not subject:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy môn học hoặc bạn không có quyền xóa!")
+    
+    db.delete(subject)
+    db.commit()
+    return
