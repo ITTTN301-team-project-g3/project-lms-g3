@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 # Import phiên làm việc DB và các Model/Schema cần thiết
 from app.db.database import get_db
 from app.models.subject import Subject
+from app.models.task import Task # 👈 Import model Task để kiểm tra lúc xóa
 from app.schemas.subject import SubjectCreate, SubjectResponse, SubjectUpdate
 
 # Import dependency xác thực Token người dùng
@@ -117,6 +118,14 @@ def delete_subject(
     
     if not subject:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy môn học hoặc bạn không có quyền xóa!")
+    
+    # ĐOẠN NÀY LÀ ĐỂ HOÀN THÀNH TASK STT 26 ĐÓ: Kiểm tra xem môn học có bài tập nào không
+    linked_tasks = db.query(Task).filter(Task.subject_id == subject_id).first()
+    if linked_tasks:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Không thể xóa! Môn học này đang chứa bài tập."
+        )
     
     db.delete(subject)
     db.commit()
