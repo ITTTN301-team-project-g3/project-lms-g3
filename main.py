@@ -30,3 +30,4 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/")
 def root():
     return {"message": "Server FastAPI hoạt động tốt!"}
+# Update check task module
