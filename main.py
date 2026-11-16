@@ -20,7 +20,7 @@ app = FastAPI(
 app.include_router(auth.router)
 app.include_router(subject.router)  
 
-# 2. Mount thư mục tĩnh static chứa HTML/CSS/JS
+# 2. Mount thư mục tĩnh static chứa html/css/js
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
