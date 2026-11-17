@@ -136,3 +136,32 @@ def delete_task(
     db.delete(task)
     db.commit()
     return None
+
+
+# 5. API Cập nhật trạng thái bài tập (PATCH /tasks/{task_id}/status)
+@router.patch("/{task_id}/status", response_model=TaskResponse, summary="Cập nhật trạng thái bài tập")
+def update_task_status(
+    task_id: int,
+    status_in: TaskStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Bước 1: Tìm bài tập theo ID và kiểm tra xem có đúng của người đang đăng nhập không
+    task = db.query(Task).filter(
+        Task.id == task_id,
+        Task.user_id == current_user.id
+    ).first()
+
+    # Bước 2: Nếu không tìm thấy hoặc không phải bài tập của mình thì báo lỗi 404
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy bài tập hoặc bạn không có quyền cập nhật!"
+        )
+
+    #Bước 3: Cập nhật trạng thái mới (TODO, IN_PROGRESS, hoặc DONE) và lưu vào Database
+    task.status = status_in.status.value
+    db.commit()
+    db.refresh(task)
+
+    return task
