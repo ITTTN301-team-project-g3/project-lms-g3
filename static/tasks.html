@@ -3,123 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Danh sách Bài tập</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <title>Quản lý Bài tập - StudentHub</title>
+    <!-- Nhúng thư viện giao diện Bootstrap 5 (đã sửa đủ dấu đóng thẻ) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
-    <div class="container mt-5">
+    <!-- =================================================================== -->
+    <!-- PHẦN 1: THANH MENU TRÊN CÙNG (Đồng bộ với Dashboard & Môn học)      -->
+    <!-- =================================================================== -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/static/dashboard.html">📚 StudentHub</a>
+            <div class="d-flex gap-2">
+                <a href="/static/dashboard.html" class="btn btn-outline-info btn-sm">Dashboard</a>
+                <a href="/static/subjects.html" class="btn btn-outline-light btn-sm">Quản lý Môn học</a>
+                <button class="btn btn-outline-danger btn-sm" onclick="logout()">Đăng xuất</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- =================================================================== -->
+    <!-- PHẦN 2: BẢNG HIỂN THỊ DANH SÁCH BÀI TẬP                             -->
+    <!-- =================================================================== -->
+    <div class="container py-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>📋 Quản lý Danh sách Bài tập</h2>
-            <a href="/static/dashboard.html" class="btn btn-outline-secondary">Trang chủ</a>
         </div>
 
-        <!-- Khu vực hiển thị thông báo lỗi/thành công -->
+        <!-- Khung hiện thông báo thành công hoặc báo lỗi -->
         <div id="alertMessage" class="alert d-none shadow-sm" role="alert"></div>
 
-        <!-- Bảng hiển thị danh sách bài tập -->
         <div class="card shadow-sm">
             <div class="card-body">
                 <table class="table table-hover align-middle">
                     <thead class="table-dark">
                         <tr>
                             <th>ID</th>
-                            <th>Tiêu đề</th>
+                            <th>Tiêu đề bài tập</th>
                             <th>Mô tả</th>
                             <th>Hạn chót</th>
                             <th>Trạng thái</th>
                             <th class="text-center">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody id="taskTableBody">
-                        <!-- Dữ liệu sẽ được JavaScript tự động đổ vào đây -->
-                    </tbody>
+                    <!-- Phần thân bảng: JavaScript sẽ tự động vẽ các dòng bài tập vào đây -->
+                    <tbody id="taskTableBody"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript tích hợp gọi API -->
+    <!-- =================================================================== -->
+    <!-- PHẦN 3: CODE XỬ LÝ DỮ LIỆU (JAVASCRIPT)                             -->
+    <!-- =================================================================== -->
     <script>
-        document.addEventListener('DOMContentLoaded', fetchTasks);
+        // BƯỚC 1: Khai báo địa chỉ Backend (cổng 8000) và kiểm tra đăng nhập
+        const API_URL = "http://127.0.0.1:8000/tasks/";
+        const token = localStorage.getItem("access_token");
 
-        // Lấy Token xác thực từ LocalStorage
-        const token = localStorage.getItem('access_token');
+        // Nếu chưa có chìa khóa đăng nhập thì đẩy về trang Login
         if (!token) {
-            window.location.href = '/static/login.html';
+            alert("Vui lòng đăng nhập trước!");
+            window.location.href = "/static/login.html";
         }
 
-        // 1. Hàm gọi API lấy danh sách bài tập (GET /tasks/)
+        // Hàm tạo thẻ thông hành gửi kèm khi gọi lên Backend
+        function getAuthHeaders() {
+            return {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            };
+        }
+
+        // BƯỚC 2: Gọi API lấy danh sách bài tập (GET) và hiển thị ra bảng
         async function fetchTasks() {
             try {
-                const response = await fetch('/tasks/', {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const response = await fetch(API_URL, {
+                    headers: getAuthHeaders()
                 });
-                
+
+                // Nếu chìa khóa hết hạn thì bắt đăng nhập lại
                 if (response.status === 401) {
-                    window.location.href = '/static/login.html';
+                    logout();
                     return;
                 }
 
                 const tasks = await response.json();
-                const tbody = document.getElementById('taskTableBody');
-                tbody.innerHTML = '';
+                const tbody = document.getElementById("taskTableBody");
+                tbody.innerHTML = ""; // Xóa dữ liệu cũ trước khi vẽ lại
 
+                // Nếu chưa có bài tập nào thì hiện thông báo gọn gàng
                 if (tasks.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Chưa có bài tập nào.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Chưa có bài tập nào trong danh sách.</td></tr>`;
                     return;
                 }
 
+                // Duyệt qua từng bài tập và tạo thành từng dòng trong bảng
                 tasks.forEach(task => {
+                    const rawDate = task.due_date || task.deadline;
+                    const formattedDate = rawDate ? new Date(rawDate).toLocaleDateString("vi-VN") : "---";
+
                     tbody.innerHTML += `
                         <tr>
                             <td>${task.id}</td>
                             <td class="fw-bold">${task.title}</td>
-                            <td>${task.description || '---'}</td>
-                            <td>${task.deadline ? new Date(task.deadline).toLocaleDateString() : '---'}</td>
+                            <td>${task.description || '<span class="text-muted">Không có mô tả</span>'}</td>
+                            <td>${formattedDate}</td>
                             <td><span class="badge bg-primary">${task.status}</span></td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-danger" onclick="deleteTask(${task.id})">Xóa</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.id})">Xóa</button>
                             </td>
                         </tr>
                     `;
                 });
             } catch (err) {
-                showAlert('Lỗi tải danh sách bài tập từ máy chủ!', 'danger');
+                console.error("Lỗi tải bài tập:", err);
+                showAlert("Lỗi tải danh sách bài tập từ máy chủ!", "danger");
             }
         }
 
-        // 2. Hàm gọi API Xóa bài tập (DELETE /tasks/{id})
+        // BƯỚC 3: Gọi API Xóa bài tập (DELETE /tasks/{id})
         async function deleteTask(id) {
-            if (!confirm('Bạn có chắc chắn muốn xóa bài tập này không?')) return;
+            if (!confirm("Bạn có chắc chắn muốn xóa bài tập này không?")) return;
 
             try {
-                const response = await fetch(`/tasks/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const response = await fetch(`${API_URL}${id}`, {
+                    method: "DELETE",
+                    headers: getAuthHeaders()
                 });
 
                 if (response.ok || response.status === 204) {
-                    showAlert('Xóa bài tập thành công!', 'success');
+                    showAlert("Xóa bài tập thành công!", "success");
                     fetchTasks(); // Tải lại bảng sau khi xóa
                 } else {
                     const data = await response.json();
-                    showAlert(data.detail || 'Không thể xóa bài tập này!', 'danger');
+                    showAlert(data.detail || "Không thể xóa bài tập này!", "danger");
                 }
             } catch (err) {
-                showAlert('Lỗi kết nối máy chủ!', 'danger');
+                showAlert("Lỗi kết nối máy chủ!", "danger");
             }
         }
 
-        // Hàm hỗ trợ hiện thông báo
+        // Hàm hỗ trợ hiện thanh thông báo trên màn hình
         function showAlert(message, type) {
-            const alertMsg = document.getElementById('alertMessage');
+            const alertMsg = document.getElementById("alertMessage");
             alertMsg.className = `alert alert-${type}`;
             alertMsg.innerText = message;
-            alertMsg.classList.remove('d-none');
-            setTimeout(() => alertMsg.classList.add('d-none'), 4000);
+            alertMsg.classList.remove("d-none");
+            setTimeout(() => alertMsg.classList.add("d-none"), 4000);
         }
+
+        // Hàm đăng xuất
+        function logout() {
+            localStorage.removeItem("access_token");
+            window.location.href = "/static/login.html";
+        }
+
+        // Tự động tải danh sách bài tập ngay khi vừa mở trang
+        document.addEventListener("DOMContentLoaded", fetchTasks);
     </script>
 </body>
 </html>

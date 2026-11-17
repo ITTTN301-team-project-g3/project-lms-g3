@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field
+from app.models.task import StatusEnum
 
 # Định nghĩa các trạng thái hợp lệ của bài tập
 TaskStatus = Literal["TODO", "IN_PROGRESS", "DONE"]
@@ -30,3 +31,6 @@ class TaskResponse(TaskBase):
     subject_id: int
 
     model_config = ConfigDict(from_attributes=True)
+# 5. Schema định nghĩa trạng thái bài tập
+class TaskStatusUpdate(BaseModel):
+    status: StatusEnum = Field(..., description="Trạng thái mới của bài tập")

@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Gọi Backend API Đăng ký
         try {
-            const response = await fetch('/auth/register', {
+            const response = await fetch('http://127.0.0.1:8000/auth/register',{
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
