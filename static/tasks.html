@@ -3,123 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Danh sách Bài tập</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <title>Quản lý Bài tập - StudentHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="bg-light">
+<body class="bg-gray-100 min-h-screen">
+    <!-- Thanh điều hướng -->
+    <nav class="bg-gray-900 text-white px-6 py-4 mb-8 shadow">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <span class="font-bold text-lg">📚 StudentHub</span>
+                <a href="/static/subjects.html" class="text-gray-300 hover:text-white text-sm">Môn học</a>
+                <a href="/static/tasks.html" class="text-white font-semibold text-sm border-b-2 border-blue-500 pb-1">Bài tập</a>
+            </div>
+            <button onclick="logout()" class="px-3 py-1 border border-gray-500 rounded text-sm hover:bg-gray-800">Đăng xuất</button>
+        </div>
+    </nav>
 
-    <div class="container mt-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>📋 Quản lý Danh sách Bài tập</h2>
-            <a href="/static/dashboard.html" class="btn btn-outline-secondary">Trang chủ</a>
+    <div class="max-w-4xl mx-auto px-4 pb-12">
+        <!-- Header + Nút mở Modal Thêm bài tập -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Quản lý Bài tập (Tasks)</h1>
+            <button onclick="openCreateModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium shadow-sm">
+                + Thêm bài tập
+            </button>
         </div>
 
-        <!-- Khu vực hiển thị thông báo lỗi/thành công -->
-        <div id="alertMessage" class="alert d-none shadow-sm" role="alert"></div>
-
-        <!-- Bảng hiển thị danh sách bài tập -->
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>ID</th>
-                            <th>Tiêu đề</th>
-                            <th>Mô tả</th>
-                            <th>Hạn chót</th>
-                            <th>Trạng thái</th>
-                            <th class="text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody id="taskTableBody">
-                        <!-- Dữ liệu sẽ được JavaScript tự động đổ vào đây -->
-                    </tbody>
-                </table>
+        <!-- Danh sách & Bộ lọc bài tập -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-3">
+                <h2 class="text-lg font-semibold text-gray-800">Danh sách bài tập của tôi</h2>
+                <div class="flex flex-wrap gap-2">
+                    <select id="filter-subject" onchange="fetchTasks()" class="p-2 border rounded-md text-sm bg-white">
+                        <option value="">Tất cả môn học</option>
+                    </select>
+                    <select id="filter-status" onchange="fetchTasks()" class="p-2 border rounded-md text-sm bg-white">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="TODO">TODO</option>
+                        <option value="IN_PROGRESS">IN_PROGRESS</option>
+                        <option value="DONE">DONE</option>
+                    </select>
+                </div>
             </div>
+            <div id="task-list-container"></div>
         </div>
     </div>
 
-    <!-- JavaScript tích hợp gọi API -->
-    <script>
-        document.addEventListener('DOMContentLoaded', fetchTasks);
+    <!-- Modal UI Dùng Chung Cho Thêm & Sửa Bài Tập -->
+    <div id="task-modal" onclick="if (event.target === this) closeTaskModal()" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 id="modal-title" class="text-lg font-bold text-gray-800">Thêm bài tập mới</h3>
+                <button type="button" onclick="closeTaskModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
 
-        // Lấy Token xác thực từ LocalStorage
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-            window.location.href = '/static/login.html';
-        }
+            <form id="task-form" class="space-y-4">
+                <input type="hidden" id="task-id">
 
-        // 1. Hàm gọi API lấy danh sách bài tập (GET /tasks/)
-        async function fetchTasks() {
-            try {
-                const response = await fetch('/tasks/', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (response.status === 401) {
-                    window.location.href = '/static/login.html';
-                    return;
-                }
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tiêu đề bài tập <span class="text-red-500">*</span></label>
+                    <input type="text" id="task-title" required minlength="2" maxlength="255" class="mt-1 block w-full p-2 border rounded-md" placeholder="VD: Hoàn thành báo cáo Sprint 2">
+                </div>
 
-                const tasks = await response.json();
-                const tbody = document.getElementById('taskTableBody');
-                tbody.innerHTML = '';
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mô tả</label>
+                    <textarea id="task-desc" rows="3" class="mt-1 block w-full p-2 border rounded-md" placeholder="Chi tiết yêu cầu bài tập..."></textarea>
+                </div>
 
-                if (tasks.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Chưa có bài tập nào.</td></tr>`;
-                    return;
-                }
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Môn học <span class="text-red-500">*</span></label>
+                    <select id="task-subject-id" required class="mt-1 block w-full p-2 border rounded-md bg-white">
+                        <option value="">-- Chọn môn học --</option>
+                    </select>
+                </div>
 
-                tasks.forEach(task => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${task.id}</td>
-                            <td class="fw-bold">${task.title}</td>
-                            <td>${task.description || '---'}</td>
-                            <td>${task.deadline ? new Date(task.deadline).toLocaleDateString() : '---'}</td>
-                            <td><span class="badge bg-primary">${task.status}</span></td>
-                            <td class="text-center">
-                                <button class="btn btn-sm btn-danger" onclick="deleteTask(${task.id})">Xóa</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch (err) {
-                showAlert('Lỗi tải danh sách bài tập từ máy chủ!', 'danger');
-            }
-        }
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Hạn nộp</label>
+                        <input type="datetime-local" id="task-duedate" class="mt-1 block w-full p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Trạng thái</label>
+                        <select id="task-status" class="mt-1 block w-full p-2 border rounded-md bg-white">
+                            <option value="TODO">Chưa làm (TODO)</option>
+                            <option value="IN_PROGRESS">Đang làm (IN_PROGRESS)</option>
+                            <option value="DONE">Hoàn thành (DONE)</option>
+                        </select>
+                    </div>
+                </div>
 
-        // 2. Hàm gọi API Xóa bài tập (DELETE /tasks/{id})
-        async function deleteTask(id) {
-            if (!confirm('Bạn có chắc chắn muốn xóa bài tập này không?')) return;
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeTaskModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Hủy</button>
+                    <button type="submit" id="modal-submit-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">Lưu bài tập</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-            try {
-                const response = await fetch(`/tasks/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok || response.status === 204) {
-                    showAlert('Xóa bài tập thành công!', 'success');
-                    fetchTasks(); // Tải lại bảng sau khi xóa
-                } else {
-                    const data = await response.json();
-                    showAlert(data.detail || 'Không thể xóa bài tập này!', 'danger');
-                }
-            } catch (err) {
-                showAlert('Lỗi kết nối máy chủ!', 'danger');
-            }
-        }
-
-        // Hàm hỗ trợ hiện thông báo
-        function showAlert(message, type) {
-            const alertMsg = document.getElementById('alertMessage');
-            alertMsg.className = `alert alert-${type}`;
-            alertMsg.innerText = message;
-            alertMsg.classList.remove('d-none');
-            setTimeout(() => alertMsg.classList.add('d-none'), 4000);
-        }
-    </script>
+    <script src="/static/js/tasks.js"></script>
 </body>
 </html>
