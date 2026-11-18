@@ -15,20 +15,30 @@ router = APIRouter(
     tags=["Tasks"]
 )
 
-# 1. API Xem danh sách bài tập (GET /tasks/)
-@router.get("/", response_model=List[TaskResponse], summary="Xem danh sách bài tập")
+# 1. API Xem, Tìm kiếm và Lọc danh sách bài tập (GET /tasks/)
+@router.get("/", response_model=List[TaskResponse], summary="Xem, tìm kiếm và lọc danh sách bài tập")
 def get_tasks(
+    search: Optional[str] = None,
+    status: Optional[StatusEnum] = None,
     subject_id: Optional[int] = None,
-    task_status: Optional[StatusEnum] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Chỉ lấy bài tập của tài khoản đang đăng nhập
+    # Luôn lọc trước theo tài khoản đang đăng nhập
     query = db.query(Task).filter(Task.user_id == current_user.id)
+
+    # Nếu có nhập từ khóa -> tìm trong tiêu đề bài tập (không phân biệt chữ hoa/thường)
+    if search and search.strip():
+        query = query.filter(Task.title.ilike(f"%{search.strip()}%"))
+
+    # Nếu có chọn trạng thái -> lọc đúng trạng thái đó (TODO, IN_PROGRESS, DONE)
+    if status:
+        query = query.filter(Task.status == status)
+
+    # Nếu có chọn môn học -> lọc đúng môn học đó
     if subject_id:
         query = query.filter(Task.subject_id == subject_id)
-    if task_status:
-        query = query.filter(Task.status == task_status)
+
     return query.all()
 
 # 2. API Tạo bài tập mới (POST /tasks/)
