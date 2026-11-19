@@ -42,7 +42,6 @@ async function fetchTasks() {
         if (subjectId) params.append("subject_id", subjectId);
 
         const requestUrl = params.toString() ? `${API_URL}?${params.toString()}` : API_URL;
-
         const response = await fetch(requestUrl, { headers: getAuthHeaders() });
 
         if (response.status === 401) {
@@ -54,8 +53,28 @@ async function fetchTasks() {
         const tbody = document.getElementById("taskTableBody");
         tbody.innerHTML = "";
 
-        if (tasks.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Không tìm thấy bài tập nào phù hợp.</td></tr>`;
+        if (!Array.isArray(tasks) || tasks.length === 0) {
+            const isFiltering = Boolean(search || status || subjectId);
+
+            if (isFiltering) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            Không tìm thấy bài tập nào phù hợp với điều kiện lọc.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <p class="text-muted mb-2 fw-bold">Tài khoản của bạn hiện chưa có bài tập nào!</p>
+                            <p class="text-muted small mb-3">Hãy tạo môn học trước, sau đó thêm bài tập đầu tiên để bắt đầu quản lý tiến độ.</p>
+                            <a href="/static/subjects.html" class="btn btn-primary btn-sm">+ Tạo môn học ngay</a>
+                        </td>
+                    </tr>
+                `;
+            }
             return;
         }
 
