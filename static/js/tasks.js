@@ -1,278 +1,142 @@
-let allSubjects = [];
-let allTasks = [];
+const API_URL = "http://127.0.0.1:8000/tasks/";
+const SUBJECT_API_URL = "http://127.0.0.1:8000/subjects/";
+const token = localStorage.getItem("access_token");
 
-function getToken() {
-    return localStorage.getItem("token") || localStorage.getItem("access_token");
+if (!token) {
+    alert("Vui lòng đăng nhập trước!");
+    window.location.href = "/static/login.html";
 }
 
 function getAuthHeaders() {
     return {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${getToken()}`
+        "Authorization": `Bearer ${token}`
     };
 }
 
-function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("access_token");
-    window.location.href = "/static/login.html";
-}
-
-function formatErrorDetail(errData, fallback) {
-    if (!errData || !errData.detail) return fallback;
-    if (typeof errData.detail === "string") return errData.detail;
-    if (Array.isArray(errData.detail)) {
-        return errData.detail.map(e => e.msg).join(", ");
-    }
-    return fallback;
-}
-
-// 1. Tải danh sách môn học đổ vào dropdown lọc và dropdown trong Modal
-async function fetchSubjects() {
+async function loadSubjectsForFilter() {
     try {
-        const response = await fetch("/subjects/", {
-            headers: getAuthHeaders()
+        const response = await fetch(SUBJECT_API_URL, { headers: getAuthHeaders() });
+        if (!response.ok) return;
+
+        const subjects = await response.json();
+        const subjectSelect = document.getElementById("subjectFilter");
+
+        subjects.forEach(sub => {
+            subjectSelect.innerHTML += `<option value="${sub.id}">${sub.code} - ${sub.name}</option>`;
         });
-
-        if (response.status === 401) {
-            logout();
-            return;
-        }
-
-        allSubjects = await response.json();
-
-        const modalSelect = document.getElementById("task-subject-id");
-        const filterSelect = document.getElementById("filter-subject");
-
-        modalSelect.innerHTML = `<option value="">-- Chọn môn học --</option>`;
-        filterSelect.innerHTML = `<option value="">Tất cả môn học</option>`;
-
-        allSubjects.forEach(sub => {
-            const label = `${escapeHtml(sub.code)} - ${escapeHtml(sub.name)}`;
-            modalSelect.innerHTML += `<option value="${sub.id}">${label}</option>`;
-            filterSelect.innerHTML += `<option value="${sub.id}">${label}</option>`;
-        });
-    } catch (error) {
-        console.error("Lỗi khi tải danh sách môn học:", error);
+    } catch (err) {
+        console.error("Lỗi tải danh sách môn học:", err);
     }
 }
 
-// 2. Lấy và hiển thị danh sách bài tập
 async function fetchTasks() {
-    const subjectId = document.getElementById("filter-subject").value;
-    const taskStatus = document.getElementById("filter-status").value;
-
-    const params = new URLSearchParams();
-    if (subjectId) params.append("subject_id", subjectId);
-    if (taskStatus) params.append("task_status", taskStatus);
-
-    const queryString = params.toString() ? `?${params.toString()}` : "";
-
     try {
-        const response = await fetch(`/tasks/${queryString}`, {
-            method: "GET",
-            headers: getAuthHeaders()
-        });
+        const search = document.getElementById("searchInput").value.trim();
+        const status = document.getElementById("statusFilter").value;
+        const subjectId = document.getElementById("subjectFilter").value;
+
+        const params = new URLSearchParams();
+        if (search) params.append("search", search);
+        if (status) params.append("status", status);
+        if (subjectId) params.append("subject_id", subjectId);
+
+        const requestUrl = params.toString() ? `${API_URL}?${params.toString()}` : API_URL;
+
+        const response = await fetch(requestUrl, { headers: getAuthHeaders() });
 
         if (response.status === 401) {
             logout();
             return;
         }
 
-        if (!response.ok) throw new Error("Không thể tải danh sách bài tập!");
+        const tasks = await response.json();
+        const tbody = document.getElementById("taskTableBody");
+        tbody.innerHTML = "";
 
-        allTasks = await response.json();
-        renderTaskList(allTasks);
-    } catch (error) {
-        console.error("Lỗi khi tải tasks:", error);
-    }
-}
-
-function getStatusBadge(status) {
-    const styles = {
-        "TODO": "bg-gray-200 text-gray-800",
-        "IN_PROGRESS": "bg-yellow-100 text-yellow-800",
-        "DONE": "bg-green-100 text-green-800"
-    };
-    return `<span class="px-2 py-0.5 rounded text-xs font-semibold ${styles[status] || "bg-gray-100"}">${status}</span>`;
-}
-
-function renderTaskList(tasks) {
-    const taskContainer = document.getElementById("task-list-container");
-    if (!taskContainer) return;
-
-    taskContainer.innerHTML = "";
-
-    if (tasks.length === 0) {
-        taskContainer.innerHTML = `<p class="text-gray-500 text-center py-6">Chưa có bài tập nào phù hợp. Bấm <strong>+ Thêm bài tập</strong> để tạo mới.</p>`;
-        return;
-    }
-
-    tasks.forEach(task => {
-        const subject = allSubjects.find(s => s.id === task.subject_id);
-        const subjectLabel = subject ? `${escapeHtml(subject.code)} - ${escapeHtml(subject.name)}` : `Môn #${task.subject_id}`;
-
-        const taskCard = document.createElement("div");
-        taskCard.className = "p-4 mb-3 border rounded-lg shadow-sm bg-white flex justify-between items-center hover:border-blue-300 transition";
-
-        taskCard.innerHTML = `
-            <div>
-                <div class="flex items-center space-x-2 mb-1">
-                    <span class="text-xs font-medium px-2 py-0.5 bg-blue-50 text-blue-700 rounded">${subjectLabel}</span>
-                    ${getStatusBadge(task.status)}
-                </div>
-                <h3 class="font-bold text-lg text-gray-800">${escapeHtml(task.title)}</h3>
-                <p class="text-gray-600 text-sm">${escapeHtml(task.description || "Không có mô tả")}</p>
-                <div class="text-xs text-gray-500 mt-1">
-                    Hạn nộp: ${task.due_date ? new Date(task.due_date).toLocaleString("vi-VN") : "Không có"}
-                </div>
-            </div>
-            <div class="flex space-x-2 shrink-0 ml-4">
-                <button onclick="openEditModal(${task.id})"
-                    class="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600">Sửa</button>
-                <button onclick="deleteTask(${task.id})"
-                    class="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600">Xóa</button>
-            </div>
-        `;
-        taskContainer.appendChild(taskCard);
-    });
-}
-
-// 3. Mở Modal ở chế độ THÊM MỚI
-function openCreateModal() {
-    document.getElementById("modal-title").innerText = "Thêm bài tập mới";
-    document.getElementById("modal-submit-btn").innerText = "Tạo bài tập";
-    document.getElementById("task-form").reset();
-    document.getElementById("task-id").value = "";
-    document.getElementById("task-status").value = "TODO";
-
-    const modal = document.getElementById("task-modal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-}
-
-// 4. Mở Modal ở chế độ CHỈNH SỬA
-function openEditModal(taskId) {
-    const task = allTasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    document.getElementById("modal-title").innerText = "Cập nhật bài tập";
-    document.getElementById("modal-submit-btn").innerText = "Lưu thay đổi";
-    document.getElementById("task-id").value = task.id;
-    document.getElementById("task-title").value = task.title;
-    document.getElementById("task-desc").value = task.description || "";
-    document.getElementById("task-subject-id").value = task.subject_id;
-    document.getElementById("task-status").value = task.status;
-
-    if (task.due_date) {
-        const dt = new Date(task.due_date);
-        const offset = dt.getTimezoneOffset() * 60000;
-        document.getElementById("task-duedate").value = new Date(dt - offset).toISOString().slice(0, 16);
-    } else {
-        document.getElementById("task-duedate").value = "";
-    }
-
-    const modal = document.getElementById("task-modal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-}
-
-function closeTaskModal() {
-    const modal = document.getElementById("task-modal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-}
-
-// 5. Xử lý Submit Form trong Modal (Tự phân biệt POST Thêm mới hoặc PUT Cập nhật)
-async function handleSaveTask(event) {
-    event.preventDefault();
-
-    const taskId = document.getElementById("task-id").value;
-    const dueDate = document.getElementById("task-duedate").value;
-    const subjectId = parseInt(document.getElementById("task-subject-id").value);
-
-    if (isNaN(subjectId)) {
-        alert("Vui lòng chọn môn học!");
-        return;
-    }
-
-    const payload = {
-        title: document.getElementById("task-title").value.trim(),
-        description: document.getElementById("task-desc").value.trim() || null,
-        subject_id: subjectId,
-        due_date: dueDate ? new Date(dueDate).toISOString() : null,
-        status: document.getElementById("task-status").value
-    };
-
-    const method = taskId ? "PUT" : "POST";
-    const url = taskId ? `/tasks/${taskId}` : "/tasks/";
-
-    try {
-        const response = await fetch(url, {
-            method: method,
-            headers: getAuthHeaders(),
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errData = await response.json();
-            alert(`Lỗi: ${formatErrorDetail(errData, "Không thể lưu bài tập!")}`);
+        if (tasks.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Không tìm thấy bài tập nào phù hợp.</td></tr>`;
             return;
         }
 
-        closeTaskModal();
-        fetchTasks();
-    } catch (error) {
-        console.error("Lỗi khi lưu task:", error);
+        tasks.forEach(task => {
+            const rawDate = task.due_date || task.deadline;
+            const formattedDate = rawDate ? new Date(rawDate).toLocaleDateString("vi-VN") : "---";
+
+            let badgeColor = "bg-secondary";
+            if (task.status === "IN_PROGRESS") badgeColor = "bg-warning text-dark";
+            if (task.status === "DONE") badgeColor = "bg-success";
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${task.id}</td>
+                    <td class="fw-bold">${task.title}</td>
+                    <td>${task.description || '<span class="text-muted">Không có mô tả</span>'}</td>
+                    <td>${formattedDate}</td>
+                    <td><span class="badge ${badgeColor}">${task.status}</span></td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.id})">Xóa</button>
+                    </td>
+                </tr>
+            `;
+        });
+    } catch (err) {
+        showAlert("Lỗi tải danh sách bài tập từ máy chủ!", "danger");
     }
 }
 
-// 6. Xóa bài tập
-async function deleteTask(taskId) {
+function resetFilters() {
+    document.getElementById("searchInput").value = "";
+    document.getElementById("statusFilter").value = "";
+    document.getElementById("subjectFilter").value = "";
+    fetchTasks();
+}
+
+async function deleteTask(id) {
     if (!confirm("Bạn có chắc chắn muốn xóa bài tập này không?")) return;
 
     try {
-        const response = await fetch(`/tasks/${taskId}`, {
+        const response = await fetch(`${API_URL}${id}`, {
             method: "DELETE",
             headers: getAuthHeaders()
         });
 
-        if (!response.ok) {
-            const errData = await response.json();
-            alert(`Lỗi: ${formatErrorDetail(errData, "Không thể xóa bài tập!")}`);
-            return;
+        if (response.ok || response.status === 204) {
+            showAlert("Xóa bài tập thành công!", "success");
+            fetchTasks();
+        } else {
+            const data = await response.json();
+            showAlert(data.detail || "Không thể xóa bài tập này!", "danger");
         }
+    } catch (err) {
+        showAlert("Lỗi kết nối máy chủ!", "danger");
+    }
+}
 
+function showAlert(message, type) {
+    const alertMsg = document.getElementById("alertMessage");
+    alertMsg.className = `alert alert-${type}`;
+    alertMsg.innerText = message;
+    alertMsg.classList.remove("d-none");
+    setTimeout(() => alertMsg.classList.add("d-none"), 4000);
+}
+
+function logout() {
+    localStorage.removeItem("access_token");
+    window.location.href = "/static/login.html";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadSubjectsForFilter();
+    fetchTasks();
+
+    document.getElementById("filterForm").addEventListener("submit", (e) => {
+        e.preventDefault();
         fetchTasks();
-    } catch (error) {
-        console.error("Lỗi khi xóa task:", error);
-    }
-}
+    });
 
-function escapeHtml(str) {
-    if (!str) return "";
-    return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-    if (!getToken()) {
-        alert("Vui lòng đăng nhập trước!");
-        window.location.href = "/static/login.html";
-        return;
-    }
-
-    await fetchSubjects();
-    await fetchTasks();
-
-    document.getElementById("task-form").addEventListener("submit", handleSaveTask);
-});
-
-// Cho phép bấm phím ESC để đóng Modal
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeTaskModal();
+    document.getElementById("statusFilter").addEventListener("change", fetchTasks);
+    document.getElementById("subjectFilter").addEventListener("change", fetchTasks);
+    document.getElementById("resetFilterBtn").addEventListener("click", resetFilters);
+    document.getElementById("logoutBtn").addEventListener("click", logout);
 });
