@@ -8,9 +8,7 @@
 </head>
 <body class="bg-light">
 
-    <!-- =================================================================== -->
-    <!-- PHẦN 1: THANH MENU TRÊN CÙNG                                        -->
-    <!-- =================================================================== -->
+    <!-- PHẦN 1: THANH MENU TRÊN CÙNG -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/static/dashboard.html">📚 StudentHub</a>
@@ -23,26 +21,26 @@
     </nav>
 
     <div class="container py-5">
+        <!-- Header + Nút mở Modal Thêm bài tập -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>📋 Quản lý Danh sách Bài tập</h2>
+            <h2 class="mb-0">📋 Quản lý Danh sách Bài tập</h2>
+            <button class="btn btn-primary fw-semibold shadow-sm" onclick="openCreateModal()">
+                + Thêm bài tập
+            </button>
         </div>
 
         <!-- Khung hiện thông báo -->
         <div id="alertMessage" class="alert d-none shadow-sm" role="alert"></div>
 
-        <!-- =================================================================== -->
-        <!-- PHẦN 2: THANH TÌM KIẾM VÀ BỘ LỌC (FILTER UI)                        -->
-        <!-- =================================================================== -->
+        <!-- PHẦN 2: THANH TÌM KIẾM VÀ BỘ LỌC (FILTER UI) -->
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <form id="filterForm" class="row g-3 align-items-end">
-                    <!-- Ô nhập từ khóa tìm kiếm -->
                     <div class="col-md-4">
                         <label for="searchInput" class="form-label fw-bold">Tìm kiếm bài tập</label>
                         <input type="text" class="form-control" id="searchInput" placeholder="Nhập tên bài tập cần tìm...">
                     </div>
 
-                    <!-- Ô lọc theo Trạng thái -->
                     <div class="col-md-3">
                         <label for="statusFilter" class="form-label fw-bold">Trạng thái</label>
                         <select class="form-select" id="statusFilter">
@@ -53,7 +51,6 @@
                         </select>
                     </div>
 
-                    <!-- Ô lọc theo Môn học (Tự động tải từ API Môn học) -->
                     <div class="col-md-3">
                         <label for="subjectFilter" class="form-label fw-bold">Môn học</label>
                         <select class="form-select" id="subjectFilter">
@@ -61,7 +58,6 @@
                         </select>
                     </div>
 
-                    <!-- Nút Lọc và Đặt lại -->
                     <div class="col-md-2 d-flex gap-2">
                         <button type="submit" class="btn btn-primary w-100">Lọc</button>
                         <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()">Xóa</button>
@@ -70,35 +66,104 @@
             </div>
         </div>
 
-        <!-- =================================================================== -->
-        <!-- PHẦN 3: BẢNG HIỂN THỊ DANH SÁCH BÀI TẬP                             -->
-        <!-- =================================================================== -->
+        <!-- PHẦN 3: BẢNG HIỂN THỊ DANH SÁCH BÀI TẬP & TRẠNG THÁI TRỐNG (EMPTY STATE) -->
         <div class="card shadow-sm">
             <div class="card-body">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>ID</th>
-                            <th>Tiêu đề bài tập</th>
-                            <th>Mô tả</th>
-                            <th>Hạn chót</th>
-                            <th>Trạng thái</th>
-                            <th class="text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody id="taskTableBody"></tbody>
-                </table>
+                <!-- Bảng dữ liệu -->
+                <div id="tableWrapper" class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Môn học</th>
+                                <th>Tiêu đề bài tập</th>
+                                <th>Mô tả</th>
+                                <th>Hạn chót</th>
+                                <th>Trạng thái</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Giao diện hiển thị khi "Không tìm thấy bài tập" -->
+                <div id="emptyState" class="text-center py-5 px-3 d-none">
+                    <div id="emptyIcon" class="display-4 mb-3">📭</div>
+                    <h4 id="emptyTitle" class="fw-bold text-dark mb-2">Không tìm thấy bài tập</h4>
+                    <p id="emptyDesc" class="text-muted mx-auto mb-4" style="max-width: 440px;">
+                        Không có bài tập nào phù hợp với điều kiện hiện tại.
+                    </p>
+                    <div id="emptyAction"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- =================================================================== -->
-    <!-- PHẦN 4: CODE XỬ LÝ TÌM KIẾM, LỌC VÀ HIỂN THỊ (JAVASCRIPT)           -->
-    <!-- =================================================================== -->
+    <!-- PHẦN 4: MODAL UI THÊM & SỬA BÀI TẬP -->
+    <div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="taskForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="taskModalLabel">Thêm bài tập mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="taskId">
+
+                        <div class="mb-3">
+                            <label for="taskTitle" class="form-label fw-semibold">Tiêu đề bài tập <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="taskTitle" required minlength="2" maxlength="255" placeholder="VD: Hoàn thành báo cáo Sprint 2">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="taskSubjectId" class="form-label fw-semibold">Môn học <span class="text-danger">*</span></label>
+                            <select class="form-select" id="taskSubjectId" required>
+                                <option value="">-- Chọn môn học --</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="taskDescription" class="form-label fw-semibold">Mô tả</label>
+                            <textarea class="form-control" id="taskDescription" rows="3" placeholder="Chi tiết yêu cầu bài tập..."></textarea>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="taskDueDate" class="form-label fw-semibold">Hạn chót</label>
+                                <input type="datetime-local" class="form-control" id="taskDueDate">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskStatus" class="form-label fw-semibold">Trạng thái</label>
+                                <select class="form-select" id="taskStatus">
+                                    <option value="TODO">Chưa làm (TODO)</option>
+                                    <option value="IN_PROGRESS">Đang làm (IN_PROGRESS)</option>
+                                    <option value="DONE">Hoàn thành (DONE)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" id="saveTaskBtn">Lưu bài tập</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- PHẦN 5: JAVASCRIPT XỬ LÝ CRUD, TÌM KIẾM, LỌC, MODAL & EMPTY STATE -->
     <script>
-        const API_URL = "http://127.0.0.1:8000/tasks/";
-        const SUBJECT_API_URL = "http://127.0.0.1:8000/subjects/";
-        const token = localStorage.getItem("access_token");
+        const API_URL = "/tasks/";
+        const SUBJECT_API_URL = "/subjects/";
+        const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+
+        let allSubjects = [];
+        let allTasks = [];
+        let taskModalInstance = null;
 
         if (!token) {
             alert("Vui lòng đăng nhập trước!");
@@ -112,32 +177,99 @@
             };
         }
 
-        // BƯỚC 1: Tải danh sách Môn học đưa vào ô chọn Bộ lọc
-        async function loadSubjectsForFilter() {
+        function escapeHtml(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // BƯỚC 1: Tải danh sách Môn học đưa vào Bộ lọc và Modal
+        async function loadSubjects() {
             try {
                 const response = await fetch(SUBJECT_API_URL, { headers: getAuthHeaders() });
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
                 if (!response.ok) return;
 
-                const subjects = await response.json();
-                const subjectSelect = document.getElementById("subjectFilter");
+                allSubjects = await response.json();
+                const filterSelect = document.getElementById("subjectFilter");
+                const modalSelect = document.getElementById("taskSubjectId");
 
-                subjects.forEach(sub => {
-                    subjectSelect.innerHTML += `<option value="${sub.id}">${sub.code} - ${sub.name}</option>`;
+                filterSelect.innerHTML = `<option value="">-- Tất cả môn học --</option>`;
+                modalSelect.innerHTML = `<option value="">-- Chọn môn học --</option>`;
+
+                allSubjects.forEach(sub => {
+                    const label = `${escapeHtml(sub.code)} - ${escapeHtml(sub.name)}`;
+                    filterSelect.innerHTML += `<option value="${sub.id}">${label}</option>`;
+                    modalSelect.innerHTML += `<option value="${sub.id}">${label}</option>`;
                 });
             } catch (err) {
-                console.error("Không tải được danh sách môn học cho bộ lọc:", err);
+                console.error("Không tải được danh sách môn học:", err);
             }
         }
 
-        // BƯỚC 2: Gọi API Lấy danh sách bài tập (kèm từ khóa tìm kiếm & điều kiện lọc)
+        // BƯỚC 2: Render giao diện khi "Không tìm thấy bài tập"
+        function renderEmptyState(isFiltering) {
+            const emptyState = document.getElementById("emptyState");
+            const emptyIcon = document.getElementById("emptyIcon");
+            const emptyTitle = document.getElementById("emptyTitle");
+            const emptyDesc = document.getElementById("emptyDesc");
+            const emptyAction = document.getElementById("emptyAction");
+
+            if (isFiltering) {
+                emptyIcon.innerText = "🔍";
+                emptyTitle.innerText = "Không tìm thấy bài tập";
+                emptyDesc.innerText = "Không có bài tập nào khớp với từ khóa hoặc bộ lọc bạn đã chọn.";
+                emptyAction.innerHTML = `
+                    <button type="button" class="btn btn-outline-primary" onclick="resetFilters()">
+                        Đặt lại bộ lọc
+                    </button>
+                `;
+            } else if (allSubjects.length === 0) {
+                emptyIcon.innerText = "📚";
+                emptyTitle.innerText = "Không tìm thấy bài tập";
+                emptyDesc.innerText = "Bạn chưa có môn học nào. Hãy tạo môn học trước để bắt đầu thêm bài tập!";
+                emptyAction.innerHTML = `
+                    <a href="/static/subjects.html" class="btn btn-primary">
+                        + Đi tới Quản lý Môn học
+                    </a>
+                `;
+            } else {
+                emptyIcon.innerText = "📭";
+                emptyTitle.innerText = "Không tìm thấy bài tập";
+                emptyDesc.innerText = "Danh sách bài tập của bạn đang trống. Hãy thêm bài tập mới để theo dõi tiến độ!";
+                emptyAction.innerHTML = `
+                    <button type="button" class="btn btn-primary" onclick="openCreateModal()">
+                        + Thêm bài tập đầu tiên
+                    </button>
+                `;
+            }
+
+            emptyState.classList.remove("d-none");
+        }
+
+        // BƯỚC 3: Gọi API Lấy danh sách bài tập (kèm tìm kiếm & lọc)
         async function fetchTasks() {
+            const tableWrapper = document.getElementById("tableWrapper");
+            const emptyState = document.getElementById("emptyState");
+            const tbody = document.getElementById("taskTableBody");
+
             try {
-                // Lấy giá trị từ 3 ô lọc trên giao diện
                 const search = document.getElementById("searchInput").value.trim();
                 const status = document.getElementById("statusFilter").value;
                 const subjectId = document.getElementById("subjectFilter").value;
 
-                // Ghép thành chuỗi tham số trên URL (VD: ?search=bao+cao&status=TODO)
+                // Hiển thị trạng thái đang tải
+                emptyState.classList.add("d-none");
+                tableWrapper.classList.remove("d-none");
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Đang tải danh sách bài tập...</td></tr>`;
+
                 const params = new URLSearchParams();
                 if (search) params.append("search", search);
                 if (status) params.append("status", status);
@@ -154,32 +286,42 @@
                     return;
                 }
 
-                const tasks = await response.json();
-                const tbody = document.getElementById("taskTableBody");
-                tbody.innerHTML = "";
+                allTasks = await response.json();
 
-                if (tasks.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Không tìm thấy bài tập nào phù hợp.</td></tr>`;
+                // Nếu không có bài tập nào -> Ẩn bảng và hiển thị Empty State
+                if (allTasks.length === 0) {
+                    tableWrapper.classList.add("d-none");
+                    renderEmptyState(Boolean(search || status || subjectId));
                     return;
                 }
 
-                tasks.forEach(task => {
-                    const rawDate = task.due_date || task.deadline;
-                    const formattedDate = rawDate ? new Date(rawDate).toLocaleDateString("vi-VN") : "---";
+                emptyState.classList.add("d-none");
+                tableWrapper.classList.remove("d-none");
+                tbody.innerHTML = "";
 
-                    // Đổi màu nhãn trạng thái cho dễ nhìn
-                    let badgeColor = "bg-secondary";
-                    if (task.status === "IN_PROGRESS") badgeColor = "bg-warning text-dark";
-                    if (task.status === "DONE") badgeColor = "bg-success";
+                allTasks.forEach(task => {
+                    const sub = allSubjects.find(s => s.id === task.subject_id);
+                    const subBadge = sub ? `<span class="badge bg-info text-dark">${escapeHtml(sub.code)}</span>` : `#${task.subject_id}`;
+
+                    const rawDate = task.due_date || task.deadline;
+                    const formattedDate = rawDate ? new Date(rawDate).toLocaleString("vi-VN") : "---";
 
                     tbody.innerHTML += `
                         <tr>
                             <td>${task.id}</td>
-                            <td class="fw-bold">${task.title}</td>
-                            <td>${task.description || '<span class="text-muted">Không có mô tả</span>'}</td>
+                            <td>${subBadge}</td>
+                            <td class="fw-bold">${escapeHtml(task.title)}</td>
+                            <td>${task.description ? escapeHtml(task.description) : '<span class="text-muted">Không có mô tả</span>'}</td>
                             <td>${formattedDate}</td>
-                            <td><span class="badge ${badgeColor}">${task.status}</span></td>
-                            <td class="text-center">
+                            <td>
+                                <select class="form-select form-select-sm" style="width: 145px;" onchange="quickUpdateStatus(${task.id}, this.value)">
+                                    <option value="TODO" ${task.status === "TODO" ? "selected" : ""}>TODO</option>
+                                    <option value="IN_PROGRESS" ${task.status === "IN_PROGRESS" ? "selected" : ""}>IN_PROGRESS</option>
+                                    <option value="DONE" ${task.status === "DONE" ? "selected" : ""}>DONE</option>
+                                </select>
+                            </td>
+                            <td class="text-center text-nowrap">
+                                <button class="btn btn-sm btn-outline-warning me-1" onclick="openEditModal(${task.id})">Sửa</button>
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.id})">Xóa</button>
                             </td>
                         </tr>
@@ -187,21 +329,121 @@
                 });
             } catch (err) {
                 console.error("Lỗi tải bài tập:", err);
+                tableWrapper.classList.add("d-none");
+                renderEmptyState(false);
                 showAlert("Lỗi tải danh sách bài tập từ máy chủ!", "danger");
             }
         }
 
-        // BƯỚC 3: Xử lý khi bấm nút "Lọc" hoặc nhấn Enter
+        // BƯỚC 4: Mở Modal Thêm bài tập
+        function openCreateModal() {
+            document.getElementById("taskModalLabel").innerText = "Thêm bài tập mới";
+            document.getElementById("saveTaskBtn").innerText = "Tạo bài tập";
+            document.getElementById("taskForm").reset();
+            document.getElementById("taskId").value = "";
+            document.getElementById("taskStatus").value = "TODO";
+            taskModalInstance.show();
+        }
+
+        // BƯỚC 5: Mở Modal Sửa bài tập
+        function openEditModal(id) {
+            const task = allTasks.find(t => t.id === id);
+            if (!task) return;
+
+            document.getElementById("taskModalLabel").innerText = "Cập nhật bài tập";
+            document.getElementById("saveTaskBtn").innerText = "Lưu thay đổi";
+            document.getElementById("taskId").value = task.id;
+            document.getElementById("taskTitle").value = task.title;
+            document.getElementById("taskDescription").value = task.description || "";
+            document.getElementById("taskSubjectId").value = task.subject_id;
+            document.getElementById("taskStatus").value = task.status;
+
+            if (task.due_date) {
+                const dt = new Date(task.due_date);
+                const offset = dt.getTimezoneOffset() * 60000;
+                document.getElementById("taskDueDate").value = new Date(dt - offset).toISOString().slice(0, 16);
+            } else {
+                document.getElementById("taskDueDate").value = "";
+            }
+
+            taskModalInstance.show();
+        }
+
+        // BƯỚC 6: Lưu Thêm mới (POST) hoặc Cập nhật (PUT) từ Modal
+        document.getElementById("taskForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const taskId = document.getElementById("taskId").value;
+            const dueDateVal = document.getElementById("taskDueDate").value;
+            const subjectId = parseInt(document.getElementById("taskSubjectId").value);
+
+            if (isNaN(subjectId)) {
+                showAlert("Vui lòng chọn môn học!", "warning");
+                return;
+            }
+
+            const payload = {
+                title: document.getElementById("taskTitle").value.trim(),
+                description: document.getElementById("taskDescription").value.trim() || null,
+                subject_id: subjectId,
+                due_date: dueDateVal ? new Date(dueDateVal).toISOString() : null,
+                status: document.getElementById("taskStatus").value
+            };
+
+            const method = taskId ? "PUT" : "POST";
+            const url = taskId ? `${API_URL}${taskId}` : API_URL;
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    const msg = typeof data.detail === "string" ? data.detail : "Không thể lưu bài tập!";
+                    showAlert(msg, "danger");
+                    return;
+                }
+
+                taskModalInstance.hide();
+                showAlert(taskId ? "Cập nhật bài tập thành công!" : "Thêm bài tập mới thành công!", "success");
+                fetchTasks();
+            } catch (err) {
+                showAlert("Lỗi kết nối máy chủ!", "danger");
+            }
+        });
+
+        // BƯỚC 7: Đổi nhanh trạng thái bằng API PATCH
+        async function quickUpdateStatus(id, newStatus) {
+            try {
+                const response = await fetch(`${API_URL}${id}/status`, {
+                    method: "PATCH",
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (!response.ok) {
+                    showAlert("Không thể cập nhật trạng thái!", "danger");
+                    fetchTasks();
+                    return;
+                }
+
+                showAlert("Đã cập nhật trạng thái bài tập!", "success");
+            } catch (err) {
+                showAlert("Lỗi kết nối máy chủ!", "danger");
+            }
+        }
+
+        // Bộ lọc
         document.getElementById("filterForm").addEventListener("submit", function(e) {
             e.preventDefault();
             fetchTasks();
         });
-
-        // Tự động lọc ngay khi đổi lựa chọn Trạng thái hoặc Môn học
         document.getElementById("statusFilter").addEventListener("change", fetchTasks);
         document.getElementById("subjectFilter").addEventListener("change", fetchTasks);
 
-        // Nút "Xóa" bộ lọc để quay về xem toàn bộ danh sách
         function resetFilters() {
             document.getElementById("searchInput").value = "";
             document.getElementById("statusFilter").value = "";
@@ -240,14 +482,15 @@
         }
 
         function logout() {
+            localStorage.removeItem("token");
             localStorage.removeItem("access_token");
             window.location.href = "/static/login.html";
         }
 
-        // Tự động chạy khi mở trang
-        document.addEventListener("DOMContentLoaded", () => {
-            loadSubjectsForFilter();
-            fetchTasks();
+        document.addEventListener("DOMContentLoaded", async () => {
+            taskModalInstance = new bootstrap.Modal(document.getElementById("taskModal"));
+            await loadSubjects();
+            await fetchTasks();
         });
     </script>
 </body>
