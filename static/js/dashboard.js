@@ -1,5 +1,5 @@
-const STATS_API_URL = "http://127.0.0.1:8000/dashboard/stats";
-const token = localStorage.getItem("access_token");
+const STATS_API_URL = "/dashboard/stats";
+const token = localStorage.getItem("token") || localStorage.getItem("access_token");
 
 if (!token) {
     window.location.href = "/static/login.html";
@@ -39,6 +39,7 @@ async function loadDashboardStats() {
 }
 
 function logout() {
+    localStorage.removeItem("token");
     localStorage.removeItem("access_token");
     window.location.href = "/static/login.html";
 }
