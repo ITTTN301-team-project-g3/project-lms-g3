@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.db.database import engine, Base
-from app.routers import auth, subject, task
-
+from app.routers import auth, subject, task, dashboard
 from fastapi.middleware.cors import CORSMiddleware
 # Import các models để SQLAlchemy nhận diện và tạo bảng tự động
 from app.models.user import User
@@ -31,6 +30,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(subject.router)
 app.include_router(task.router)
+app.include_router(dashboard.router)
 
 # 2. Mount thư mục tĩnh static chứa html/css/js
 app.mount("/static", StaticFiles(directory="static"), name="static")
