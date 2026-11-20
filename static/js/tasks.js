@@ -31,7 +31,7 @@ async function loadSubjectsForFilter() {
     }
 }
 
-// Hàm xác định màu cảnh báo trực quan (Highlight UI) dựa vào hạn chót và trạng thái
+// Hàm xác định màu cảnh báo trực quan (Highlight UI) đồng bộ với logic Backend
 function getDeadlineHighlight(task) {
     // 1. Nếu bài tập đã hoàn thành -> tô màu xanh nhẹ, không cảnh báo trễ hạn
     if (task.status === "DONE") {
@@ -44,51 +44,56 @@ function getDeadlineHighlight(task) {
     }
 
     const rawDate = task.due_date || task.deadline;
-    if (!rawDate) {
-        return { rowClass: "", deadlineBadge: "", isOverdue: false, isDueSoon: false };
+    let diffDays = null;
+
+    if (rawDate) {
+        // Đưa cả ngày hôm nay và ngày hạn chót về 00:00:00 để tính số ngày hiển thị trên nhãn
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const dueDate = new Date(rawDate);
+        dueDate.setHours(0, 0, 0, 0);
+
+        diffDays = Math.round((dueDate - today) / (1000 * 60 * 60 * 24));
     }
 
-    // Đưa cả ngày hôm nay và ngày hạn chót về 00:00:00 để so sánh chính xác theo ngày
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // 2. Kiểm tra quá hạn (ưu tiên cờ is_overdue từ Backend trả về) -> Cảnh báo Đỏ
+    const overdue = typeof task.is_overdue === "boolean"
+        ? task.is_overdue
+        : (diffDays !== null && diffDays < 0);
 
-    const dueDate = new Date(rawDate);
-    dueDate.setHours(0, 0, 0, 0);
+    if (overdue) {
+        const overdueText = (diffDays !== null && diffDays < 0)
+            ? `Quá hạn ${Math.abs(diffDays)} ngày`
+            : "Quá hạn";
 
-    // Tính số ngày chênh lệch
-    const diffDays = Math.round((dueDate - today) / (1000 * 60 * 60 * 24));
-
-    // 2. Quá hạn (ngày hạn chót nhỏ hơn hôm nay) -> Cảnh báo Đỏ
-    if (diffDays < 0) {
         return {
             rowClass: "table-danger task-overdue",
-            deadlineBadge: `<span class="badge bg-danger ms-1">Quá hạn ${Math.abs(diffDays)} ngày</span>`,
+            deadlineBadge: `<span class="badge bg-danger ms-1">${overdueText}</span>`,
             isOverdue: true,
             isDueSoon: false
         };
     }
 
-    // 3. Hạn chót ngay hôm nay -> Cảnh báo Vàng đậm
-    if (diffDays === 0) {
+    // 3. Kiểm tra sắp đến hạn trong 3 ngày (ưu tiên cờ is_due_soon từ Backend trả về) -> Cảnh báo Vàng
+    const dueSoon = typeof task.is_due_soon === "boolean"
+        ? task.is_due_soon
+        : (diffDays !== null && diffDays >= 0 && diffDays <= 3);
+
+    if (dueSoon) {
+        let dueSoonText = "Sắp đến hạn";
+        if (diffDays === 0) dueSoonText = "Hạn hôm nay";
+        else if (diffDays !== null && diffDays > 0) dueSoonText = `Còn ${diffDays} ngày`;
+
         return {
             rowClass: "table-warning task-due-soon",
-            deadlineBadge: `<span class="badge bg-warning text-dark ms-1">Hạn hôm nay</span>`,
+            deadlineBadge: `<span class="badge bg-warning text-dark ms-1">${dueSoonText}</span>`,
             isOverdue: false,
             isDueSoon: true
         };
     }
 
-    // 4. Sắp đến hạn (còn 1 đến 2 ngày) -> Cảnh báo Vàng
-    if (diffDays <= 2) {
-        return {
-            rowClass: "table-warning task-due-soon",
-            deadlineBadge: `<span class="badge bg-warning text-dark ms-1">Còn ${diffDays} ngày</span>`,
-            isOverdue: false,
-            isDueSoon: true
-        };
-    }
-
-    // 5. Còn nhiều thời gian -> Hiển thị bình thường
+    // 4. Còn nhiều thời gian -> Hiển thị bình thường
     return { rowClass: "", deadlineBadge: "", isOverdue: false, isDueSoon: false };
 }
 

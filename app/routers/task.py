@@ -1,3 +1,4 @@
+from datetime import datetime, time
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -11,6 +12,10 @@ from app.models.user import User
 from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse, TaskStatus
 from app.core.dependencies import get_current_user
 
+# Import 2 hàm kiểm tra quá hạn và sắp đến hạn từ module core của nhóm
+from app.core.task_overdue import is_task_overdue
+from app.core.task_due_soon import is_task_due_soon
+
 router = APIRouter(
     prefix="/tasks",
     tags=["Tasks"]
@@ -19,6 +24,20 @@ router = APIRouter(
 # Schema nhận dữ liệu trạng thái mới khi gọi API PATCH
 class TaskStatusUpdate(BaseModel):
     status: TaskStatus
+
+
+# Hàm hỗ trợ tính toán và gắn cờ quá hạn / sắp đến hạn cho từng bài tập
+def attach_deadline_flags(task: Task) -> Task:
+    status_str = task.status.value if hasattr(task.status, "value") else str(task.status)
+    due_dt = task.due_date
+
+    # Chuyển đổi sang datetime nếu cột due_date trong model đang lưu kiểu date
+    if due_dt is not None and not isinstance(due_dt, datetime):
+        due_dt = datetime.combine(due_dt, time(23, 59, 59))
+
+    task.is_overdue = is_task_overdue(due_dt, status_str)
+    task.is_due_soon = is_task_due_soon(due_dt, status_str)
+    return task
 
 
 # 1. API Xem, Tìm kiếm và Lọc danh sách bài tập (GET /tasks/)
@@ -47,7 +66,13 @@ def get_tasks(
     if effective_status is not None:
         query = query.filter(Task.status == effective_status)
 
-    return query.all()
+    tasks = query.all()
+
+    # Gắn thêm thông tin cảnh báo quá hạn / sắp đến hạn trước khi trả về Frontend
+    for task in tasks:
+        attach_deadline_flags(task)
+
+    return tasks
 
 
 # 2. API Tạo bài tập mới (POST /tasks/)
@@ -82,7 +107,7 @@ def create_task(
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
-    return new_task
+    return attach_deadline_flags(new_task)
 
 
 # 3. API Cập nhật thông tin bài tập (PUT /tasks/{task_id})
@@ -129,7 +154,7 @@ def update_task(
     # Bước 4: Lưu thay đổi vào Database
     db.commit()
     db.refresh(task)
-    return task
+    return attach_deadline_flags(task)
 
 
 # 4. API Cập nhật nhanh trạng thái bài tập (PATCH /tasks/{task_id}/status)
@@ -159,7 +184,7 @@ def update_task_status(
     task.status = status_in.status
     db.commit()
     db.refresh(task)
-    return task
+    return attach_deadline_flags(task)
 
 
 # 5. API Xóa bài tập (DELETE /tasks/{task_id})

@@ -30,6 +30,8 @@ class TaskResponse(TaskBase):
     id: int
     subject_id: int
 
+    is_overdue: bool = False
+    is_due_soon: bool = False
     model_config = ConfigDict(from_attributes=True)
 # 5. Schema định nghĩa trạng thái bài tập
 class TaskStatusUpdate(BaseModel):
