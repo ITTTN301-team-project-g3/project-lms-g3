@@ -14,3 +14,42 @@ body {
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
+
+/* =========================================================
+   GIAO DIỆN CẢNH BÁO TRỰC QUAN (HIGHLIGHT UI) CHO BÀI TẬP
+   ========================================================= */
+
+/* 1. Bài tập quá hạn -> Viền trái đỏ đậm + nền đỏ nhạt */
+tr.task-overdue td:first-child {
+    border-left: 5px solid #dc3545;
+}
+
+/* 2. Bài tập sắp đến hạn -> Viền trái vàng cam + nền vàng nhạt */
+tr.task-due-soon td:first-child {
+    border-left: 5px solid #ffc107;
+}
+
+/* 3. Bài tập đã hoàn thành -> Viền trái xanh lá + làm dịu chữ */
+tr.task-done {
+    background-color: #f8f9fa;
+    opacity: 0.78;
+}
+
+tr.task-done td:first-child {
+    border-left: 5px solid #198754;
+}
+
+tr.task-done .task-title {
+    text-decoration: line-through;
+    color: #6c757d;
+}
+
+/* Chấm tròn chú thích màu sắc trên thanh hướng dẫn */
+.legend-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+}
