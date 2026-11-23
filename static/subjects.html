@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Môn học - StudentHub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/css/style.css?v=7" rel="stylesheet">
+    <link href="/static/css/style.css?v=10" rel="stylesheet">
 </head>
 <body class="app-layout">
 
@@ -43,7 +43,7 @@
                         <div>
                             <div class="small text-white-50 fw-semibold mb-1">Môn học đang quản lý</div>
                             <div class="fs-2 fw-bold text-info lh-1" id="totalSubjectsHero">0</div>
-                            <div class="small text-white-50 mt-1">Bấm "Nội dung học" để xem bài giảng</div>
+                            <div class="small text-white-50 mt-1">Bấm "Vào học ngay" để xem bài giảng</div>
                         </div>
                         <div class="rounded-4 d-flex align-items-center justify-content-center fs-2" style="width: 58px; height: 58px; background: rgba(56, 189, 248, 0.16); border: 1px solid rgba(56, 189, 248, 0.3);">
                             🎓
@@ -108,52 +108,7 @@
         </div>
     </main>
 
-    <div id="courseModalBackdrop" class="course-modal-backdrop d-none">
-        <div class="course-modal-box">
-            <div class="course-modal-header">
-                <div class="d-flex justify-content-between align-items-start gap-3">
-                    <div>
-                        <span class="badge bg-info text-dark mb-2" id="modalSubjectCode">MÃ MÔN</span>
-                        <h4 class="fw-bold mb-1" id="modalSubjectName">Tên môn học</h4>
-                        <p class="small text-white-50 mb-0" id="modalSubjectDesc">Mô tả môn học</p>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-light" id="courseModalCloseBtn">✕ Đóng</button>
-                </div>
-                <div class="mt-3 pt-2 border-top border-white border-opacity-10">
-                    <div class="d-flex justify-content-between small mb-1">
-                        <span class="text-white-50">Tiến độ đọc bài giảng</span>
-                        <span class="fw-semibold text-info" id="modalStudyProgressText">0/0 chương (0%)</span>
-                    </div>
-                    <div class="hero-progress-wrap">
-                        <div class="hero-progress-fill" id="modalStudyProgressBar"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="course-modal-body">
-                <div id="modalLessonsContainer"></div>
-
-                <div class="bg-white border rounded-4 p-3 mt-3">
-                    <h6 class="fw-bold text-dark mb-2">➕ Thêm chương / ghi chú bài giảng mới</h6>
-                    <form id="addLessonForm" class="row g-2">
-                        <div class="col-md-8">
-                            <input type="text" class="form-control form-control-sm" id="lessonTitleInput" placeholder="Tên chương hoặc chủ đề bài học..." required>
-                        </div>
-                        <div class="col-md-4">
-                            <input type="text" class="form-control form-control-sm" id="lessonDurationInput" placeholder="Thời lượng (VD: 45 phút)">
-                        </div>
-                        <div class="col-12">
-                            <textarea class="form-control form-control-sm" id="lessonSummaryInput" rows="2" placeholder="Nội dung tóm tắt kiến thức trọng tâm của bài học..." required></textarea>
-                        </div>
-                        <div class="col-12 text-end">
-                            <button type="submit" class="btn btn-primary btn-sm px-3">+ Thêm vào đề cương</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="/static/js/subjects.js?v=7"></script>
+    <script src="/static/js/animations.js?v=10"></script>
 </body>
 </html>

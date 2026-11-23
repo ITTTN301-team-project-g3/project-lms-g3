@@ -1,43 +1,86 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('registerForm');
-    const alertMessage = document.getElementById('alertMessage');
+const REGISTER_API_URL = "http://127.0.0.1:8000/auth/register";
 
-    form.addEventListener('submit', async function (e) {
+function formatRegisterError(data) {
+    if (!data || !data.detail) return "Đăng ký thất bại, vui lòng kiểm tra lại thông tin!";
+    if (Array.isArray(data.detail)) {
+        return data.detail.map(e => `${e.loc ? e.loc.slice(-1)[0] : ""}: ${e.msg}`).join(" | ");
+    }
+    return data.detail;
+}
+
+function playRegisterSuccessTransition(fullName, email) {
+    const card = document.getElementById("registerCard");
+    const overlay = document.getElementById("registerTransitionOverlay");
+    const userPill = document.getElementById("transitionNewUser");
+
+    userPill.innerText = `${fullName} • ${email}`;
+    card.classList.add("card-morph-out");
+
+    requestAnimationFrame(() => {
+        overlay.classList.add("active");
+    });
+
+    setTimeout(() => {
+        window.location.href = "/static/login.html";
+    }, 1850);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("registerForm");
+    const fullNameInput = document.getElementById("fullName");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const togglePasswordBtn = document.getElementById("togglePasswordBtn");
+    const submitBtn = document.getElementById("btnSubmit");
+    const alertMsg = document.getElementById("alertMessage");
+
+    togglePasswordBtn.addEventListener("click", () => {
+        const isPassword = passwordInput.type === "password";
+        passwordInput.type = isPassword ? "text" : "password";
+        togglePasswordBtn.innerText = isPassword ? "🙈" : "👁️";
+    });
+
+    form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        alertMsg.classList.add("d-none");
 
-        const fullName = document.getElementById('fullName').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
+        const fullName = fullNameInput.value.trim();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
 
-        // Reset trạng thái thông báo và viền đỏ
-        alertMessage.classList.add('d-none');
-        alertMessage.classList.remove('alert-danger', 'alert-success');
-        document.querySelectorAll('.form-control').forEach(input => input.classList.remove('is-invalid'));
-
-        // Validate cơ bản phía Client
         let isValid = true;
+
         if (!fullName) {
-            document.getElementById('fullName').classList.add('is-invalid');
+            fullNameInput.classList.add("is-invalid");
             isValid = false;
+        } else {
+            fullNameInput.classList.remove("is-invalid");
         }
-        if (!email || !email.includes('@')) {
-            document.getElementById('email').classList.add('is-invalid');
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailPattern.test(email)) {
+            emailInput.classList.add("is-invalid");
             isValid = false;
+        } else {
+            emailInput.classList.remove("is-invalid");
         }
+
         if (!password || password.length < 6) {
-            document.getElementById('password').classList.add('is-invalid');
+            passwordInput.classList.add("is-invalid");
             isValid = false;
+        } else {
+            passwordInput.classList.remove("is-invalid");
         }
 
         if (!isValid) return;
 
-        // Gọi Backend API Đăng ký
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="btn-loading-spinner"></span>Đang khởi tạo tài khoản...';
+
         try {
-            const response = await fetch('http://127.0.0.1:8000/auth/register',{
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+            const response = await fetch(REGISTER_API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     full_name: fullName,
                     email: email,
@@ -48,26 +91,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
-                // Hiển thị thông báo thành công
-                alertMessage.classList.remove('d-none');
-                alertMessage.classList.add('alert-success');
-                alertMessage.innerText = '🎉 Đăng ký thành công! Đang chuyển hướng sang trang đăng nhập...';
-                form.reset();
-
-                // Tự động chuyển trang sau 2s
-                setTimeout(() => {
-                    window.location.href = '/static/login.html';
-                }, 2000);
+                playRegisterSuccessTransition(fullName, email);
             } else {
-                // Hiển thị lỗi từ Backend (vd: Trùng email)
-                alertMessage.classList.remove('d-none');
-                alertMessage.classList.add('alert-danger');
-                alertMessage.innerText = data.detail || 'Đăng ký thất bại. Vui lòng kiểm tra lại!';
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Đăng Ký Ngay";
+                alertMsg.className = "alert alert-danger mt-2";
+                alertMsg.innerText = formatRegisterError(data);
+                alertMsg.classList.remove("d-none");
             }
-        } catch (error) {
-            alertMessage.classList.remove('d-none');
-            alertMessage.classList.add('alert-danger');
-            alertMessage.innerText = 'Không thể kết nối đến server backend!';
+        } catch (err) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Đăng Ký Ngay";
+            alertMsg.className = "alert alert-danger mt-2";
+            alertMsg.innerText = "Không kết nối được tới máy chủ FastAPI!";
+            alertMsg.classList.remove("d-none");
         }
     });
 });
