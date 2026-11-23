@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài giảng Môn học - StudentHub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css?v=8" rel="stylesheet">
+</head>
+<body class="lms-reader-layout">
+
+    <header class="lms-topbar">
+        <div class="d-flex align-items-center gap-3 overflow-hidden">
+            <a href="/static/subjects.html" class="btn btn-outline-secondary btn-sm fw-semibold flex-shrink-0">← Thoát</a>
+            <div class="overflow-hidden">
+                <div class="small text-muted text-truncate" id="topBreadcrumb">Môn học • Chương 1</div>
+                <div class="fw-bold text-dark text-truncate" id="topLessonTitle">Đang tải nội dung bài học...</div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            <span class="lms-pill lms-pill-green">✓ Bài đọc</span>
+            <span class="lms-pill lms-pill-xp" id="xpBadge">⭐ 0 XP</span>
+            <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" id="createTaskFromCurrentBtn">
+                + Tạo bài tập ôn
+            </button>
+        </div>
+    </header>
+
+    <div class="lms-workspace">
+        <aside class="lms-sidebar">
+            <div class="lms-course-meta">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-primary" id="sidebarSubjectCode">MÃ MÔN</span>
+                    <span class="small text-muted" id="sidebarCourseStats">• 4 chương</span>
+                </div>
+                <h6 class="fw-bold text-dark mb-0" id="sidebarSubjectName">Tên môn học</h6>
+            </div>
+            <div id="curriculumTree"></div>
+        </aside>
+
+        <section class="lms-content-area" id="readerScrollArea">
+            <div class="lms-article-container">
+                <div id="alertMessage" class="alert d-none mb-3" role="alert"></div>
+
+                <div class="lms-tip-banner" id="tipBanner">
+                    <span>💡 Đọc kỹ phần này nhé, toàn kiến thức vàng! 📚</span>
+                    <button type="button" class="btn-close btn-sm" id="closeTipBtn" aria-label="Đóng"></button>
+                </div>
+
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="small text-primary fw-semibold mb-1" id="articleChapterTag">Chương 1</div>
+                    <h3 class="fw-bold text-dark mb-2" id="articleTitle">[Bài đọc] Tiêu đề bài học</h3>
+                    <div class="small text-muted" id="articleMeta">Thời lượng đọc: 10 phút • Tài liệu chuẩn học phần</div>
+                </div>
+
+                <article class="lms-article-body" id="articleBody"></article>
+            </div>
+        </section>
+    </div>
+
+    <footer class="lms-bottombar">
+        <div class="d-flex align-items-center gap-3">
+            <span class="small fw-semibold text-secondary">Tiến độ môn học</span>
+            <span class="fw-bold text-primary" id="bottomProgressPct">0%</span>
+            <div class="lms-progress-track d-none d-sm-block">
+                <div class="lms-progress-fill" id="bottomProgressBar"></div>
+            </div>
+            <span class="small text-muted d-none d-md-inline" id="bottomProgressCount">(0/0 bài học)</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2" id="prevLessonBtn">← Bài trước</button>
+            <button type="button" class="btn btn-complete-lesson" id="completeLessonBtn">Hoàn thành bài học 🎉</button>
+        </div>
+    </footer>
+
+    <script src="/static/js/course.js?v=8"></script>
+</body>
+</html>

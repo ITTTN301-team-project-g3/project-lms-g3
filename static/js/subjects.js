@@ -40,6 +40,17 @@ function formatApiError(data) {
     return data.detail;
 }
 
+function getCompletedLessonCount(subject) {
+    try {
+        const keyPart = (subject.code || subject.id).toString().toUpperCase();
+        const raw = localStorage.getItem(`studenthub_lms_done_${keyPart}`);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed.length : 0;
+    } catch (e) {
+        return 0;
+    }
+}
+
 async function fetchSubjects() {
     try {
         const response = await fetch(SUBJECT_API_URL, { headers: getAuthHeaders() });
@@ -72,14 +83,19 @@ async function fetchSubjects() {
         data.forEach((sub, index) => {
             const code = sub.code || sub.subject_code || "---";
             const name = sub.name || sub.subject_name || sub.title || "---";
+            const doneCount = getCompletedLessonCount(sub);
+
             tbody.innerHTML += `
                 <tr style="animation-delay: ${index * 0.05}s">
                     <td class="text-muted fw-medium">#${sub.id}</td>
                     <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1">${code}</span></td>
-                    <td class="fw-semibold text-dark">${name}</td>
+                    <td>
+                        <a href="/static/course.html?subject_id=${sub.id}" class="fw-semibold text-dark text-decoration-none">${name}</a>
+                        <div class="small text-muted">4 chương • 12 bài đọc • Đã xong ${doneCount}/12 bài</div>
+                    </td>
                     <td class="text-muted">${sub.description || "Không có mô tả"}</td>
                     <td class="text-end">
-                        <a href="/static/tasks.html" class="btn btn-sm btn-outline-primary me-1">Bài tập</a>
+                        <a href="/static/course.html?subject_id=${sub.id}" class="btn btn-sm btn-primary me-1">📖 Vào học ngay</a>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteSubject(${sub.id})">Xóa</button>
                     </td>
                 </tr>
@@ -168,7 +184,7 @@ async function seedSampleSubjects() {
     btn.innerText = "✨ Thêm nhanh 4 môn học mẫu";
 
     if (createdCount > 0) {
-        showAlert(`Đã tạo thành công ${createdCount} môn học mẫu!`, "success");
+        showAlert(`Đã tạo thành công ${createdCount} môn học mẫu kèm nội dung bài giảng!`, "success");
         fetchSubjects();
     } else {
         showAlert(`Chưa tạo được môn mẫu: ${lastError}`, "danger");
