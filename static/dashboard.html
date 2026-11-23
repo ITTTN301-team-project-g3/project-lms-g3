@@ -5,85 +5,164 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Tổng quan - StudentHub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/css/style.css" rel="stylesheet">
+    <link href="/static/css/style.css?v=6" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body class="app-layout">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/static/dashboard.html">📚 StudentHub</a>
-            <div class="d-flex gap-2">
-                <a href="/static/subjects.html" class="btn btn-outline-light btn-sm">Quản lý Môn học</a>
-                <a href="/static/tasks.html" class="btn btn-outline-warning btn-sm">Quản lý Bài tập</a>
-                <button class="btn btn-outline-danger btn-sm" id="logoutBtn">Đăng xuất</button>
+    <nav class="navbar navbar-dark top-navbar py-3">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand fw-bold fs-5 mb-0 d-flex align-items-center gap-2" href="/static/dashboard.html">
+                <span class="brand-icon-box">📚</span>
+                <span>StudentHub</span>
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/static/dashboard.html" class="nav-link-btn active">Dashboard</a>
+                <a href="/static/subjects.html" class="nav-link-btn">Môn học</a>
+                <a href="/static/tasks.html" class="nav-link-btn">Bài tập</a>
+                <button class="btn btn-outline-danger btn-sm ms-2" id="logoutBtn">Đăng xuất</button>
             </div>
         </div>
     </nav>
 
-    <div class="container py-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>📊 Thống kê Tổng quan</h2>
-            <span class="badge bg-primary fs-6">Thành viên Nhóm 5</span>
-        </div>
-
-        <div id="newAccountBanner" class="alert alert-info d-none shadow-sm mb-4" role="alert">
-            <h5 class="alert-heading fw-bold">Chào mừng bạn đến với StudentHub!</h5>
-            <p class="mb-2">Tài khoản mới của bạn chưa có bài tập nào. Hãy tạo môn học và thêm bài tập đầu tiên để theo dõi tiến độ học tập.</p>
-            <a href="/static/subjects.html" class="btn btn-primary btn-sm">+ Tạo môn học đầu tiên</a>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
-                        <h6 class="text-muted">Tổng số Môn học</h6>
-                        <h2 class="fw-bold text-primary mb-0" id="totalSubjects">0</h2>
+    <main class="container py-4">
+        <div class="hero-banner mb-4">
+            <div class="row align-items-center g-4 position-relative" style="z-index: 2;">
+                <div class="col-lg-7">
+                    <span class="hero-date-pill mb-3" id="currentDateBadge">📅 Hôm nay</span>
+                    <h2 class="fw-bold mb-2">Thống kê Tổng quan Học tập</h2>
+                    <p class="text-white-50 mb-3">Theo dõi tiến độ môn học, quản lý hạn chót và tối ưu hiệu suất hoàn thành bài tập mỗi ngày.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="/static/subjects.html" class="btn hero-btn-primary">+ Quản lý môn học</a>
+                        <a href="/static/tasks.html" class="btn hero-btn-glass">📋 Xem danh sách bài tập</a>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
-                        <h6 class="text-muted">Tổng số Bài tập</h6>
-                        <h2 class="fw-bold text-dark mb-0" id="totalTasks">0</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
-                        <h6 class="text-muted">Tỷ lệ Hoàn thành</h6>
-                        <h2 class="fw-bold text-success mb-0" id="completionRate">0%</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
-                        <h6 class="text-muted">Chưa làm (TODO)</h6>
-                        <h3 class="fw-bold text-secondary mb-0" id="todoTasks">0</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
-                        <h6 class="text-muted">Đang làm (IN_PROGRESS)</h6>
-                        <h3 class="fw-bold text-warning mb-0" id="inProgressTasks">0</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
-                        <h6 class="text-muted">Đã hoàn thành (DONE)</h6>
-                        <h3 class="fw-bold text-success mb-0" id="doneTasks">0</h3>
+                <div class="col-lg-5">
+                    <div class="p-3 rounded-4" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16);">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-semibold text-white-50">Tiến độ hoàn thành mục tiêu</span>
+                            <span class="fw-bold text-info" id="heroProgressText">0%</span>
+                        </div>
+                        <div class="hero-progress-wrap mb-2">
+                            <div class="hero-progress-fill" id="heroProgressBar"></div>
+                        </div>
+                        <div class="small text-white-50" id="heroSummaryNote">Đồng bộ dữ liệu thời gian thực từ hệ thống</div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="/static/js/dashboard.js"></script>
+        <div id="alertMessage" class="alert d-none" role="alert"></div>
+
+        <div id="newAccountBanner" class="onboarding-card d-none mb-4" role="alert">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h6 class="fw-bold text-primary mb-1">🚀 Chào mừng bạn đến với StudentHub!</h6>
+                    <p class="small text-secondary mb-0">Tài khoản của bạn chưa có bài tập nào. Hãy tạo môn học và thêm bài tập đầu tiên để hệ thống bắt đầu thống kê.</p>
+                </div>
+                <a href="/static/subjects.html" class="btn btn-primary btn-sm px-3 py-2 fw-semibold">+ Tạo môn học đầu tiên</a>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="stat-card accent-blue">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold mb-1">Tổng số Môn học</div>
+                            <div class="stat-value text-primary" id="totalSubjects">0</div>
+                        </div>
+                        <div class="stat-icon icon-blue">📚</div>
+                    </div>
+                    <span class="stat-chip">Học phần đang theo học</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="stat-card accent-purple">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold mb-1">Tổng số Bài tập</div>
+                            <div class="stat-value text-dark" id="totalTasks">0</div>
+                        </div>
+                        <div class="stat-icon icon-purple">🗂️</div>
+                    </div>
+                    <span class="stat-chip">Toàn bộ bài tập đã giao</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="stat-card accent-emerald">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold mb-1">Tỷ lệ Hoàn thành</div>
+                            <div class="stat-value text-success" id="completionRate">0%</div>
+                        </div>
+                        <div class="stat-icon icon-emerald">🎯</div>
+                    </div>
+                    <span class="stat-chip">Hiệu suất tổng thể</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="stat-card accent-slate">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold mb-1">Chưa làm (TODO)</div>
+                            <div class="stat-value text-secondary" id="todoTasks">0</div>
+                        </div>
+                        <div class="stat-icon icon-slate">⏳</div>
+                    </div>
+                    <span class="stat-chip">Đang chờ bắt đầu</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="stat-card accent-amber">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold mb-1">Đang làm (IN_PROGRESS)</div>
+                            <div class="stat-value text-warning" id="inProgressTasks">0</div>
+                        </div>
+                        <div class="stat-icon icon-amber">⚡</div>
+                    </div>
+                    <span class="stat-chip">Đang trong quá trình xử lý</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="stat-card accent-teal">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold mb-1">Đã hoàn thành (DONE)</div>
+                            <div class="stat-value text-success" id="doneTasks">0</div>
+                        </div>
+                        <div class="stat-icon icon-teal">✅</div>
+                    </div>
+                    <span class="stat-chip">Đã nộp & hoàn tất</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Phân bổ Trạng thái Bài tập</h6>
+                    <span class="text-muted small">Tỷ trọng giữa các nhóm công việc hiện tại</span>
+                </div>
+                <div class="d-flex flex-wrap gap-3 small fw-medium">
+                    <span><span class="dist-dot" style="background:#64748b;"></span>Chưa làm: <strong id="pctTodo">0%</strong></span>
+                    <span><span class="dist-dot" style="background:#f59e0b;"></span>Đang làm: <strong id="pctInProgress">0%</strong></span>
+                    <span><span class="dist-dot" style="background:#10b981;"></span>Hoàn thành: <strong id="pctDone">0%</strong></span>
+                </div>
+            </div>
+            <div class="dist-track">
+                <div class="dist-seg dist-todo" id="barTodo"></div>
+                <div class="dist-seg dist-progress" id="barInProgress"></div>
+                <div class="dist-seg dist-done" id="barDone"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/dashboard.js?v=6"></script>
 </body>
 </html>

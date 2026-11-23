@@ -4,248 +4,110 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Môn học - StudentHub</title>
-    <!-- Nhúng thư viện giao diện Bootstrap 5 cho đẹp -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css?v=6" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body class="app-layout">
 
-    <!-- =================================================================== -->
-    <!-- PHẦN 1: THANH MENU TRÊN CÙNG                                        -->
-    <!-- =================================================================== -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/static/dashboard.html">📚 StudentHub</a>
-            <div class="d-flex gap-2">
-                <a href="/static/dashboard.html" class="btn btn-outline-info btn-sm">Dashboard</a>
-                <a href="/static/tasks.html" class="btn btn-outline-warning btn-sm">Quản lý Bài tập</a>
-                <button class="btn btn-outline-light btn-sm" onclick="logout()">Đăng xuất</button>
+    <nav class="navbar navbar-dark top-navbar py-3">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand fw-bold fs-5 mb-0 d-flex align-items-center gap-2" href="/static/dashboard.html">
+                <span class="brand-icon-box">📚</span>
+                <span>StudentHub</span>
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/static/dashboard.html" class="nav-link-btn">Dashboard</a>
+                <a href="/static/subjects.html" class="nav-link-btn active">Môn học</a>
+                <a href="/static/tasks.html" class="nav-link-btn">Bài tập</a>
+                <button class="btn btn-outline-danger btn-sm ms-2" id="logoutBtn">Đăng xuất</button>
             </div>
         </div>
     </nav>
 
-    <!-- =================================================================== -->
-    <!-- PHẦN 2: BẢNG HIỂN THỊ DANH SÁCH MÔN HỌC                             -->
-    <!-- =================================================================== -->
-    <div class="container py-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Quản lý Danh sách Môn học</h2>
-            <!-- Bấm nút này sẽ gọi hàm mở cửa sổ thêm mới -->
-            <button class="btn btn-primary" onclick="openCreateModal()">
-                + Thêm Môn Học
-            </button>
+    <main class="container py-4">
+        <div class="hero-banner mb-4">
+            <div class="row align-items-center g-4 position-relative" style="z-index: 2;">
+                <div class="col-lg-8">
+                    <span class="hero-date-pill mb-3">📖 Danh mục Học phần</span>
+                    <h2 class="fw-bold mb-2">Quản lý Danh sách Môn học</h2>
+                    <p class="text-white-50 mb-3">Tạo, tổ chức và quản lý toàn bộ các môn học trong học kỳ để phân loại bài tập khoa học hơn.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn hero-btn-primary" id="seedSubjectsBtn">
+                            ✨ Thêm nhanh 4 môn học mẫu
+                        </button>
+                        <a href="/static/tasks.html" class="btn hero-btn-glass">📋 Chuyển sang Bài tập</a>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="p-3 rounded-4 d-flex align-items-center justify-content-between" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16);">
+                        <div>
+                            <div class="small text-white-50 fw-semibold mb-1">Môn học đang quản lý</div>
+                            <div class="fs-2 fw-bold text-info lh-1" id="totalSubjectsHero">0</div>
+                            <div class="small text-white-50 mt-1">Học phần hoạt động</div>
+                        </div>
+                        <div class="rounded-4 d-flex align-items-center justify-content-center fs-2" style="width: 58px; height: 58px; background: rgba(56, 189, 248, 0.16); border: 1px solid rgba(56, 189, 248, 0.3);">
+                            🎓
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
+        <div id="alertMessage" class="alert d-none" role="alert"></div>
+
+        <div class="content-card p-4 mb-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="stat-icon icon-blue" style="width: 36px; height: 36px; font-size: 1rem;">➕</span>
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Thêm môn học mới</h6>
+                    <span class="text-muted small">Nhập mã học phần và tên môn để thêm vào danh sách</span>
+                </div>
+            </div>
+
+            <form id="subjectForm" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="subjectCode" class="form-label small fw-semibold text-secondary">Mã môn học *</label>
+                    <input type="text" class="form-control" id="subjectCode" placeholder="VD: INT1434" required>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="subjectName" class="form-label small fw-semibold text-secondary">Tên môn học *</label>
+                    <input type="text" class="form-control" id="subjectName" placeholder="VD: Lập trình Web" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="subjectDescription" class="form-label small fw-semibold text-secondary">Mô tả</label>
+                    <input type="text" class="form-control" id="subjectDescription" placeholder="Ghi chú môn học...">
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-semibold">+ Lưu môn học</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="content-card overflow-hidden">
+            <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+                <div class="fw-bold text-dark">Danh sách Học phần</div>
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill" id="tableSubjectCount">0 môn học</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Mã Môn</th>
-                            <th>Tên Môn Học</th>
+                            <th style="width: 80px;">ID</th>
+                            <th style="width: 140px;">Mã môn</th>
+                            <th style="width: 280px;">Tên môn học</th>
                             <th>Mô tả</th>
-                            <th class="text-center">Thao tác</th>
+                            <th class="text-end" style="width: 180px;">Thao tác</th>
                         </tr>
                     </thead>
-                    <!-- Phần thân bảng: JavaScript sẽ tự động điền các dòng môn học vào đây -->
                     <tbody id="subjectTableBody"></tbody>
                 </table>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- =================================================================== -->
-    <!-- PHẦN 3: CỬA SỔ BẬT LÊN (MODAL) ĐỂ THÊM HOẶC SỬA MÔN HỌC             -->
-    <!-- =================================================================== -->
-    <div class="modal fade" id="subjectModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="subjectForm">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="subjectModalLabel">Thêm Môn Học Mới</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Ô ẩn lưu ID: Nếu trống là Thêm mới, nếu có số ID là đang Sửa -->
-                        <input type="hidden" id="subjectId">
-
-                        <div class="mb-3">
-                            <label for="code" class="form-label">Mã môn học</label>
-                            <input type="text" class="form-control" id="code" required placeholder="VD: INT1340">
-                        </div>
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Tên môn học</label>
-                            <input type="text" class="form-control" id="name" required placeholder="VD: Công nghệ phần mềm">
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Mô tả</label>
-                            <textarea class="form-control" id="description" rows="3"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-success">Lưu lại</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Nhúng thư viện JS của Bootstrap để cửa sổ bật lên hoạt động -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- =================================================================== -->
-    <!-- PHẦN 4: CODE XỬ LÝ DỮ LIỆU (JAVASCRIPT)                             -->
-    <!-- =================================================================== -->
-    <script>
-        // BƯỚC 1: Cấu hình địa chỉ Server và kiểm tra đăng nhập
-        const API_URL = "http://127.0.0.1:8000/subjects/";
-        const token = localStorage.getItem("access_token"); // Lấy chìa khóa đã lưu lúc đăng nhập
-        const subjectModal = new bootstrap.Modal(document.getElementById("subjectModal"));
-        let currentSubjects = []; // Biến lưu tạm danh sách môn học để dùng khi bấm Sửa
-
-        // Nếu chưa có chìa khóa đăng nhập thì đẩy về trang Login
-        if (!token) {
-            alert("Vui lòng đăng nhập trước!");
-            window.location.href = "/static/login.html";
-        }
-
-        // Hàm tạo thẻ thông hành gửi kèm mỗi lần gọi lên Server
-        function getAuthHeaders() {
-            return {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-            };
-        }
-
-        // BƯỚC 2: Lấy danh sách môn học từ Server và vẽ lên bảng
-        async function loadSubjects() {
-            try {
-                const response = await fetch(API_URL, {
-                    headers: getAuthHeaders()
-                });
-
-                // Nếu chìa khóa hết hạn thì bắt đăng nhập lại
-                if (response.status === 401) {
-                    logout();
-                    return;
-                }
-
-                currentSubjects = await response.json();
-                const tbody = document.getElementById("subjectTableBody");
-                tbody.innerHTML = ""; // Xóa bảng cũ trước khi vẽ lại
-
-                // Nếu chưa có môn học nào thì hiện dòng thông báo
-                if (currentSubjects.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">Chưa có môn học nào. Hãy bấm "+ Thêm Môn Học" để tạo mới!</td></tr>`;
-                    return;
-                }
-
-                // Duyệt qua từng môn học và tạo thành từng dòng trong bảng
-                currentSubjects.forEach(sub => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${sub.id}</td>
-                            <td><span class="badge bg-secondary">${sub.code}</span></td>
-                            <td><strong>${sub.name}</strong></td>
-                            <td>${sub.description || '<span class="text-muted">Không có mô tả</span>'}</td>
-                            <td class="text-center">
-                                <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal(${sub.id})">Sửa</button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteSubject(${sub.id})">Xóa</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch (error) {
-                console.error("Lỗi khi tải dữ liệu môn học:", error);
-            }
-        }
-
-        // BƯỚC 3: Mở cửa sổ Thêm mới hoặc Sửa môn học
-        function openCreateModal() {
-            document.getElementById("subjectModalLabel").innerText = "Thêm Môn Học Mới";
-            document.getElementById("subjectForm").reset(); // Xóa trắng các ô nhập
-            document.getElementById("subjectId").value = ""; // Để trống ID để biết là Thêm mới
-            subjectModal.show();
-        }
-
-        function openEditModal(id) {
-            // Tìm môn học có ID tương ứng trong danh sách đang có
-            const sub = currentSubjects.find(item => item.id === id);
-            if (!sub) return;
-
-            // Điền sẵn thông tin cũ của môn học vào các ô nhập
-            document.getElementById("subjectModalLabel").innerText = "Cập Nhật Môn Học";
-            document.getElementById("subjectId").value = sub.id;
-            document.getElementById("code").value = sub.code;
-            document.getElementById("name").value = sub.name;
-            document.getElementById("description").value = sub.description || "";
-            subjectModal.show();
-        }
-
-        // BƯỚC 4: Xử lý khi bấm nút "Lưu lại" trên cửa sổ
-        document.getElementById("subjectForm").addEventListener("submit", async function(e) {
-            e.preventDefault(); // Ngăn trang web tự tải lại
-
-            const id = document.getElementById("subjectId").value;
-            const payload = {
-                code: document.getElementById("code").value.trim(),
-                name: document.getElementById("name").value.trim(),
-                description: document.getElementById("description").value.trim() || null
-            };
-
-            // Nếu có ID thì dùng lệnh PUT (Sửa), không có ID thì dùng POST (Thêm mới)
-            const method = id ? "PUT" : "POST";
-            const url = id ? `${API_URL}${id}` : API_URL;
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    subjectModal.hide(); // Đóng cửa sổ
-                    document.getElementById("subjectForm").reset();
-                    loadSubjects(); // Tải lại bảng để thấy dữ liệu mới
-                } else {
-                    const err = await response.json();
-                    alert("Lỗi: " + (err.detail || "Thao tác thất bại!"));
-                }
-            } catch (error) {
-                console.error("Lỗi khi lưu môn học:", error);
-            }
-        });
-
-        // BƯỚC 5: Xóa môn học và Đăng xuất
-        async function deleteSubject(id) {
-            if (!confirm("Bạn có chắc chắn muốn xóa môn học này không?")) return;
-
-            try {
-                const response = await fetch(`${API_URL}${id}`, {
-                    method: "DELETE",
-                    headers: getAuthHeaders()
-                });
-
-                if (response.ok) {
-                    loadSubjects(); // Xóa xong thì tải lại bảng
-                } else {
-                    const err = await response.json();
-                    alert(err.detail || "Không thể xóa môn học!");
-                }
-            } catch (error) {
-                console.error("Lỗi khi xóa môn học:", error);
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem("access_token"); // Vứt chìa khóa đăng nhập
-            window.location.href = "/static/login.html";
-        }
-
-        // Tự động chạy hàm tải danh sách ngay khi vừa mở trang
-        loadSubjects();
-    </script>
+    <script src="/static/js/subjects.js?v=6"></script>
 </body>
 </html>
