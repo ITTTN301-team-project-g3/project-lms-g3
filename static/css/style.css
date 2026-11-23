@@ -1142,3 +1142,19 @@ body.lms-reader-layout {
         bottom: 0;
     }
 }
+body.page-leaving {
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+.top-navbar {
+    background: #0f172a !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.stat-card,
+.hero-banner,
+.content-card {
+    will-change: transform, opacity;
+}

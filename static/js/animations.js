@@ -13,42 +13,31 @@ function attachButtonRipples() {
         ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
 
         target.appendChild(ripple);
-        setTimeout(() => ripple.remove(), 620);
-    });
-}
-
-function attachSmoothNavigation() {
-    window.addEventListener("pageshow", (e) => {
-        if (e.persisted) {
-            document.body.classList.remove("page-leaving");
-        }
-    });
-
-    document.addEventListener("click", (e) => {
-        const link = e.target.closest("a[href]");
-        if (!link) return;
-
-        const href = link.getAttribute("href");
-        if (!href || !href.startsWith("/static/")) return;
-        if (e.ctrlKey || e.metaKey || e.shiftKey || link.target === "_blank") return;
-        if (window.location.pathname + window.location.search === href) return;
-
-        e.preventDefault();
-        document.body.classList.add("page-leaving");
-        setTimeout(() => {
-            window.location.href = href;
-        }, 210);
+        setTimeout(() => ripple.remove(), 600);
     });
 }
 
 function attachCardSpotlights() {
+    let ticking = false;
+    let lastEvent = null;
+
     document.addEventListener("mousemove", (e) => {
         const card = e.target.closest(".stat-card");
         if (!card) return;
-        const rect = card.getBoundingClientRect();
-        card.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
-        card.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
-    });
+        lastEvent = { card, clientX: e.clientX, clientY: e.clientY };
+
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                if (lastEvent) {
+                    const rect = lastEvent.card.getBoundingClientRect();
+                    lastEvent.card.style.setProperty("--mouse-x", `${lastEvent.clientX - rect.left}px`);
+                    lastEvent.card.style.setProperty("--mouse-y", `${lastEvent.clientY - rect.top}px`);
+                }
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }, { passive: true });
 }
 
 function animateNumberElement(el) {
@@ -66,7 +55,7 @@ function animateNumberElement(el) {
 
     if (endValue === 0) return;
 
-    const duration = 750;
+    const duration = 650;
     const startTime = performance.now();
 
     function step(now) {
@@ -111,7 +100,6 @@ function initCounterObservers() {
 
 document.addEventListener("DOMContentLoaded", () => {
     attachButtonRipples();
-    attachSmoothNavigation();
     attachCardSpotlights();
     initCounterObservers();
 });
